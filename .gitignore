@@ -1,0 +1,7 @@
+.*
+rinkeby.json
+lib/*
+bin/*
+include/*
+man/*
+!.gitignore
