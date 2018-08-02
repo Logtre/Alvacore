@@ -11,12 +11,12 @@ contract FwdOrderly {
         bytes32 paramsHash; // the hash of the request parameters
         uint timestamp; // the timestamp of the request emitted
         bytes32 requestState; // the state of the request
-        bytes32[] requestData; // the request data
+        bytes32 requestData; // the request data
     }
 
     event Upgrade(address newAddr);
     event Reset(uint gas_price, uint min_fee, uint cancellation_fee);
-    event RequestInfo(uint64 id, uint8 requestType, address requester, uint fee, address callbackAddr, bytes32 paramsHash, uint timestamp, bytes32[] requestData); // log of requests, the Town Crier server watches this event and processes requests
+    event RequestInfo(uint64 id, uint8 requestType, address requester, uint fee, address callbackAddr, bytes32 paramsHash, uint timestamp, bytes32 requestData); // log of requests, the Town Crier server watches this event and processes requests
     event DeliverInfo(uint64 requestId, uint fee, uint gasPrice, uint gasLeft, uint callbackGas, bytes32 paramsHash, uint64 error, bytes32 respData); // log of responses
     event Cancel(uint64 requestId, address canceller, address requester, uint fee, int flag); // log of cancellations
 
@@ -112,7 +112,7 @@ contract FwdOrderly {
         }
     }
 
-    function request(uint8 requestType, address callbackAddr, bytes4 callbackFID, uint timestamp, bytes32[] requestData) public payable returns (int) {
+    function request(uint8 requestType, address callbackAddr, bytes4 callbackFID, uint timestamp, bytes32 requestData) public payable returns (int) {
         if (externalCallFlag) {
             revert();
         }
@@ -219,7 +219,7 @@ contract FwdOrderly {
         externalCallFlag = false;
     }
 
-    function getRequestData(uint64 _requestId) public view returns (uint, uint8, uint, bytes32, bytes32[]) {
+    function getRequestData(uint64 _requestId) public view returns (uint, uint8, uint, bytes32, bytes32) {
         Request storage req = requests[_requestId];
         return (req.requestId, req.requestType, req.timestamp, req.requestState, req.requestData);
     }
@@ -271,7 +271,7 @@ contract Forward {
     event Upgrade(address newAddr);
     event Reset(uint gasPrice, uint minFee, uint cancellationFee);
     event ForwardInfo(int64 fwdId, address fwdOwner, bytes32 fwdState, uint contractDay, uint settlementDay, uint expireDay, address receiverAddr, address senderAddr, uint64 fee, uint64 baseAmt, uint64 fxRate, int64 depositAmt); // log for
-    event Request(int64 requestId, address requester, uint dataLength, bytes32[] data); // log for requests
+    event Request(int64 requestId, address requester, bytes32 data); // log for requests
     event Response(int64 requestId, address requester, uint64 error, uint data); // log for responses
     event Cancel(uint64 requestId, address requester, bool success); // log for cancellations
 
@@ -295,7 +295,7 @@ contract Forward {
     uint fwdCancellationFee = cancellationFee;
 
     uint8 requestType;
-    bytes32[] requestData;
+    bytes32 requestData;
 
     bool public killswitch;
 
@@ -331,7 +331,7 @@ contract Forward {
         _;
     }
 
-    constructor(FwdOrderly _fwdOCont, uint8 _requestType, bytes32[] _requestData) public { // constractor
+    constructor(FwdOrderly _fwdOCont) public { // constractor
         FWDO_CONTRACT = _fwdOCont; // storing the address of the FWDO_CONTRACT Contract
         fwdCnt = 1;
 
@@ -348,8 +348,8 @@ contract Forward {
 
         fwdConts[0].fwdOwner = msg.sender;
 
-        requestType = _requestType;
-        requestData = _requestData;
+        requestType = 1;
+        requestData = "ETH";
 
         killswitch = false;
         externalCallFlag = false;
@@ -393,7 +393,7 @@ contract Forward {
             if (!msg.sender.send(msg.value)) {
                 revert();
             }
-            emit Request(-1, msg.sender, requestData.length, requestData);
+            emit Request(-1, msg.sender, requestData);
             return;
         }
 
@@ -404,7 +404,7 @@ contract Forward {
             if (!msg.sender.send(msg.value)) {
                 revert();
             }
-            emit Request(-2, msg.sender, requestData.length, requestData);
+            emit Request(-2, msg.sender, requestData);
             return;
         }
 
@@ -416,7 +416,7 @@ contract Forward {
 
         fwdConts[fwdId].fwdState = fwdStates[1];
 
-        emit Request(int64(requestId), msg.sender, requestData.length, requestData);
+        emit Request(int64(requestId), msg.sender, requestData);
         emit ForwardInfo(int64(fwdId),
             fwdConts[fwdId].fwdOwner,
             fwdConts[fwdId].fwdState,
@@ -667,7 +667,7 @@ contract Forward {
     }
 
     function upgrade(address _newAddr) onlyOwner() public {
-        if (msg.sender == fwdConts[0].fwdOwner && externalCallFlag == false) {
+        if (externalCallFlag == false) {
             newVersion = -int(_newAddr);
             killswitch = true;
             emit Upgrade(_newAddr);
@@ -675,7 +675,7 @@ contract Forward {
     }
 
     function reset(uint _price, uint _minGas, uint _cancellationGas) onlyOwner() public {
-        if (msg.sender == fwdConts[0].fwdOwner && externalCallFlag == false) {
+        if (externalCallFlag == false) {
             gasPrice = _price;
             minFee = _price * _minGas;
             cancellationFee = _price * _cancellationGas;
@@ -684,26 +684,23 @@ contract Forward {
     }
 
     function withdraw_fee() onlyOwner() public {
-        if (msg.sender == fwdConts[0].fwdOwner) {
-            for (int targetFwd=1; targetFwd <= fwdCnt; targetFwd++) {
-                if (!fwdConts[0].fwdOwner.send(fwdConts[targetFwd].fwdFee)) {
-                    revert();
-                }
+        for (int targetFwd=1; targetFwd <= fwdCnt; targetFwd++) {
+            if (!fwdConts[0].fwdOwner.send(fwdConts[targetFwd].fwdFee)) {
+                revert();
             }
         }
     }
 
     function suspend() onlyOwner() public {
-        if (msg.sender == fwdConts[0].fwdOwner) {
-            killswitch = true;
-        }
+        killswitch = true;
     }
 
     function restart() onlyOwner() public {
-        if (msg.sender == fwdConts[0].fwdOwner && newVersion == 0) {
+        if (newVersion == 0) {
             killswitch = false;
         }
     }
+
 
     /*function request(uint64 _fwdId, uint8 _requestType, uint _timestamp, bytes32 _requestData) public payable {
         if (msg.value < TC_FEE) {

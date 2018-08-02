@@ -1,0 +1,615 @@
+[
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_fwdId",
+				"type": "uint64"
+			}
+		],
+		"name": "getFwdDetail",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			},
+			{
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_newAddr",
+				"type": "address"
+			}
+		],
+		"name": "upgrade",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_fwdId",
+				"type": "uint64"
+			}
+		],
+		"name": "cancelFwd",
+		"outputs": [
+			{
+				"name": "",
+				"type": "int256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_fwdId",
+				"type": "uint64"
+			}
+		],
+		"name": "withdrawFwd",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "restart",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "newVersion",
+		"outputs": [
+			{
+				"name": "",
+				"type": "int256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "int256"
+			}
+		],
+		"name": "fwdConts",
+		"outputs": [
+			{
+				"name": "fwdOwner",
+				"type": "address"
+			},
+			{
+				"name": "fwdState",
+				"type": "bytes32"
+			},
+			{
+				"name": "contractDay",
+				"type": "uint256"
+			},
+			{
+				"name": "settlementDay",
+				"type": "uint256"
+			},
+			{
+				"name": "expireDay",
+				"type": "uint256"
+			},
+			{
+				"name": "receiverAddr",
+				"type": "address"
+			},
+			{
+				"name": "senderAddr",
+				"type": "address"
+			},
+			{
+				"name": "fwdFee",
+				"type": "uint256"
+			},
+			{
+				"name": "baseAmt",
+				"type": "uint64"
+			},
+			{
+				"name": "fxRate",
+				"type": "uint64"
+			},
+			{
+				"name": "depositAmt",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "killswitch",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_fwdId",
+				"type": "uint64"
+			}
+		],
+		"name": "cancelFwd_confirm",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_fwdId",
+				"type": "uint64"
+			}
+		],
+		"name": "emergencyFwd",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "FWDO_CONTRACT",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_fwdId",
+				"type": "uint64"
+			}
+		],
+		"name": "emergencyFwd_confirm",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_price",
+				"type": "uint256"
+			},
+			{
+				"name": "_minGas",
+				"type": "uint256"
+			},
+			{
+				"name": "_cancellationGas",
+				"type": "uint256"
+			}
+		],
+		"name": "reset",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_fwdId",
+				"type": "uint64"
+			}
+		],
+		"name": "withdrawFwd_confirm",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_fwdId",
+				"type": "uint64"
+			}
+		],
+		"name": "depositFwd",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_contractDay",
+				"type": "uint256"
+			},
+			{
+				"name": "_settlementDay",
+				"type": "uint256"
+			},
+			{
+				"name": "_expireDay",
+				"type": "uint256"
+			},
+			{
+				"name": "_receiverAddr",
+				"type": "address"
+			},
+			{
+				"name": "_senderAddr",
+				"type": "address"
+			},
+			{
+				"name": "_baseAmt",
+				"type": "uint64"
+			}
+		],
+		"name": "createFwd",
+		"outputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "withdraw_fee",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "suspend",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_fwdId",
+				"type": "uint64"
+			}
+		],
+		"name": "getFwdData",
+		"outputs": [
+			{
+				"name": "",
+				"type": "int64"
+			},
+			{
+				"name": "",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_fwdId",
+				"type": "uint64"
+			}
+		],
+		"name": "getFwdSenseData",
+		"outputs": [
+			{
+				"name": "",
+				"type": "address"
+			},
+			{
+				"name": "",
+				"type": "address"
+			},
+			{
+				"name": "",
+				"type": "uint64"
+			},
+			{
+				"name": "",
+				"type": "uint64"
+			},
+			{
+				"name": "",
+				"type": "uint64"
+			},
+			{
+				"name": "",
+				"type": "int64"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "externalCallFlag",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "_requestId",
+				"type": "uint64"
+			},
+			{
+				"name": "_error",
+				"type": "uint64"
+			},
+			{
+				"name": "_respData",
+				"type": "bytes32"
+			}
+		],
+		"name": "response",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"name": "_fwdOCont",
+				"type": "address"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "newAddr",
+				"type": "address"
+			}
+		],
+		"name": "Upgrade",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "gasPrice",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "minFee",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "cancellationFee",
+				"type": "uint256"
+			}
+		],
+		"name": "Reset",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "fwdId",
+				"type": "int64"
+			},
+			{
+				"indexed": false,
+				"name": "fwdOwner",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "fwdState",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"name": "contractDay",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "settlementDay",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "expireDay",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "receiverAddr",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "senderAddr",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "fee",
+				"type": "uint64"
+			},
+			{
+				"indexed": false,
+				"name": "baseAmt",
+				"type": "uint64"
+			},
+			{
+				"indexed": false,
+				"name": "fxRate",
+				"type": "uint64"
+			},
+			{
+				"indexed": false,
+				"name": "depositAmt",
+				"type": "int64"
+			}
+		],
+		"name": "ForwardInfo",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "requestId",
+				"type": "int64"
+			},
+			{
+				"indexed": false,
+				"name": "requester",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "data",
+				"type": "bytes32"
+			}
+		],
+		"name": "Request",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "requestId",
+				"type": "int64"
+			},
+			{
+				"indexed": false,
+				"name": "requester",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "error",
+				"type": "uint64"
+			},
+			{
+				"indexed": false,
+				"name": "data",
+				"type": "uint256"
+			}
+		],
+		"name": "Response",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"name": "requestId",
+				"type": "uint64"
+			},
+			{
+				"indexed": false,
+				"name": "requester",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"name": "success",
+				"type": "bool"
+			}
+		],
+		"name": "Cancel",
+		"type": "event"
+	}
+]

@@ -1,3 +1,5 @@
+pragma solidity ^0.4.9;
+
 contract FwdOrderly {
     struct Request { // the data structure for each request
         uint requestId; // the id of request
@@ -9,12 +11,12 @@ contract FwdOrderly {
         bytes32 paramsHash; // the hash of the request parameters
         uint timestamp; // the timestamp of the request emitted
         bytes32 requestState; // the state of the request
-        bytes32[] requestData; // the request data
+        bytes32 requestData; // the request data
     }
 
     event Upgrade(address newAddr);
     event Reset(uint gas_price, uint min_fee, uint cancellation_fee);
-    event RequestInfo(uint64 id, uint8 requestType, address requester, uint fee, address callbackAddr, bytes32 paramsHash, uint timestamp, bytes32[] requestData); // log of requests, the Town Crier server watches this event and processes requests
+    event RequestInfo(uint64 id, uint8 requestType, address requester, uint fee, address callbackAddr, bytes32 paramsHash, uint timestamp, bytes32 requestData); // log of requests, the Town Crier server watches this event and processes requests
     event DeliverInfo(uint64 requestId, uint fee, uint gasPrice, uint gasLeft, uint callbackGas, bytes32 paramsHash, uint64 error, bytes32 respData); // log of responses
     event Cancel(uint64 requestId, address canceller, address requester, uint fee, int flag); // log of cancellations
 
@@ -110,7 +112,7 @@ contract FwdOrderly {
         }
     }
 
-    function request(uint8 requestType, address callbackAddr, bytes4 callbackFID, uint timestamp, bytes32[] requestData) public payable returns (int) {
+    function request(uint8 requestType, address callbackAddr, bytes4 callbackFID, uint timestamp, bytes32 requestData) public payable returns (int) {
         if (externalCallFlag) {
             revert();
         }
@@ -217,7 +219,7 @@ contract FwdOrderly {
         externalCallFlag = false;
     }
 
-    function getRequestData(uint64 _requestId) public view returns (uint, uint8, uint, bytes32, bytes32[]) {
+    function getRequestData(uint64 _requestId) public view returns (uint, uint8, uint, bytes32, bytes32) {
         Request storage req = requests[_requestId];
         return (req.requestId, req.requestType, req.timestamp, req.requestState, req.requestData);
     }
