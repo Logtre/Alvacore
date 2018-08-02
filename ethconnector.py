@@ -1,7 +1,21 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+import sys, os
 from web3 import Web3, IPCProvider
 from web3.middleware import geth_poa_middleware
+
+import logging
+logger = logging.getLogger(__name__)
+for h in logger.handlers:
+    logger.removeHandler(h)
+
+h = logging.StreamHandler(sys.stdout)
+
+FORMAT = '%(levelname)s %(asctime)s [%(funcName)s] %(message)s'
+h.setFormatter(logging.Formatter(FORMAT))
+logger.addHandler(h)
+logger.setLevel(logging.INFO)
+
 
 w3 = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/eth_rinkeby_net/geth.ipc')) # on local PC
 w3 = Web3(IPCProvider('/home/ubuntu/.ethereum/rinkeby/geth.ipc')) # on AWS
