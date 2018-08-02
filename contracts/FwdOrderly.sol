@@ -1,5 +1,3 @@
-pragma solidity ^0.4.9;
-
 contract FwdOrderly {
     struct Request { // the data structure for each request
         uint requestId; // the id of request
@@ -10,7 +8,7 @@ contract FwdOrderly {
         bytes4 callbackFID; // the specification of the callback function
         bytes32 paramsHash; // the hash of the request parameters
         uint timestamp; // the timestamp of the request emitted
-        int requestState; // the state of the request
+        bytes32 requestState; // the state of the request
         bytes32[] requestData; // the request data
     }
 
@@ -20,7 +18,7 @@ contract FwdOrderly {
     event DeliverInfo(uint64 requestId, uint fee, uint gasPrice, uint gasLeft, uint callbackGas, bytes32 paramsHash, uint64 error, bytes32 respData); // log of responses
     event Cancel(uint64 requestId, address canceller, address requester, uint fee, int flag); // log of cancellations
 
-    address public constant ALVC_ADDRESS = 0xAB1eE2947091b6af01157E0373eA4966b7bd2045;// address of the ALVC account@TestNet
+    address public constant ALVC_ADDRESS = 0xAb1ee2947091B6AF01157E0373EA4966b7Bd2045;// address of the ALVC account@TestNet
 
     uint public GAS_PRICE = 50 * 10**10;
     uint public MIN_FEE = 30000 * GAS_PRICE; // minimum fee required for the requester to pay such that SGX could call deliver() to send a response
@@ -38,6 +36,7 @@ contract FwdOrderly {
     uint64 public requestCnt;
     uint64 public unrespondedCnt;
     mapping (int => Request) public requests;
+    mapping (int => bytes32) public requestStates;
 
     int public newVersion = 0;
 
@@ -46,6 +45,21 @@ contract FwdOrderly {
     // v0.4.0). So if you want your contract to receive Ether, you have to
     // implement a fallback function.
     function () public {}
+
+    modifier onlyOwner() {
+        require(msg.sender == requests[0].requester);
+        _;
+    }
+
+    modifier noUnresponse() {
+        require(unrespondedCnt == 0);
+        _;
+    }
+
+    modifier noNewVersion() {
+        require(newVersion == 0);
+        _;
+    }
 
     constructor() public {
         // Start request IDs at 1 for two reasons:
@@ -57,48 +71,42 @@ contract FwdOrderly {
         killswitch = false;
         unrespondedCnt = 0;
         externalCallFlag = false;
+
+        requestStates[-1] = "error";
+        requestStates[0] = "requesting";
+        requestStates[1] = "delivering";
+        requestStates[2] = "canceled";
+        requestStates[99] = "pendingFromOwner";
     }
 
-    function upgrade(address newAddr) public {
-        if (msg.sender == requests[0].requester && unrespondedCnt == 0) {
-            newVersion = -int(newAddr);
-            killswitch = true;
-            emit Upgrade(newAddr);
-        }
+    function upgrade(address newAddr) onlyOwner() noUnresponse() public {
+        newVersion = -int(newAddr);
+        killswitch = true;
+        emit Upgrade(newAddr);
     }
 
-    function resetfees(uint price, uint minGas, uint cancellationGas) public {
-        if (msg.sender == requests[0].requester && unrespondedCnt == 0) {
-            GAS_PRICE = price;
-            MIN_FEE = price * minGas;
-            CANCELLATION_FEE = price * cancellationGas;
-            emit Reset(GAS_PRICE, MIN_FEE, CANCELLATION_FEE);
-        }
+    function resetfees(uint price, uint minGas, uint cancellationGas) onlyOwner() noUnresponse() public {
+        GAS_PRICE = price;
+        MIN_FEE = price * minGas;
+        CANCELLATION_FEE = price * cancellationGas;
+        emit Reset(GAS_PRICE, MIN_FEE, CANCELLATION_FEE);
     }
 
-    function resetunrespond() public {
-        if (msg.sender == requests[0].requester) {
-            unrespondedCnt = 0;
-        }
+    function resetunrespond() onlyOwner() public {
+        unrespondedCnt = 0;
     }
 
-    function suspend() public {
-        if (msg.sender == requests[0].requester) {
-            killswitch = true;
-        }
+    function suspend() onlyOwner() public {
+        killswitch = true;
     }
 
-    function restart() public {
-        if (msg.sender == requests[0].requester && newVersion == 0) {
-            killswitch = false;
-        }
+    function restart() onlyOwner() noNewVersion() public {
+        killswitch = false;
     }
 
-    function withdraw() public {
-        if (msg.sender == requests[0].requester && unrespondedCnt == 0) {
-            if (!requests[0].requester.call.value(address(this).balance)()) {
-                revert();
-            }
+    function withdraw() onlyOwner() noUnresponse() public {
+        if (!requests[0].requester.call.value(address(this).balance)()) {
+            revert();
         }
     }
 
@@ -141,7 +149,7 @@ contract FwdOrderly {
             requests[requestId].callbackFID = callbackFID;
             requests[requestId].paramsHash = paramsHash;
             requests[requestId].timestamp = timestamp;
-            requests[requestId].requestState = 1;
+            requests[requestId].requestState = requestStates[0];
             requests[requestId].requestData = requestData;
 
             // Log the request for the Town Crier server to process.
@@ -157,6 +165,7 @@ contract FwdOrderly {
                 requests[requestId].fee == DELIVERED_FEE_FLAG) {
             // If the response is not delivered by the SGX account or the
             // request has already been responded to, discard the response.
+            requests[requestId].requestState = requestStates[-1];
             return;
         }
 
@@ -164,6 +173,7 @@ contract FwdOrderly {
         if (requests[requestId].paramsHash != paramsHash) {
             // If the hash of request parameters in the response is not
             // correct, discard the response for security concern.
+            requests[requestId].requestState = requestStates[-1];
             return;
         } else if (fee == CANCELLED_FEE_FLAG) {
             // If the request is cancelled by the requester, cancellation
@@ -171,6 +181,7 @@ contract FwdOrderly {
             // been responded to.
             ALVC_ADDRESS.transfer(CANCELLATION_FEE);
             requests[requestId].fee = DELIVERED_FEE_FLAG;
+            requests[requestId].requestState = requestStates[99];
             unrespondedCnt--;
             return;
         }
@@ -181,6 +192,7 @@ contract FwdOrderly {
         if (error < 2) {
             // Either no error occurs, or the requester sent an invalid query.
             // Send the fee to the SGX account for its delivering.
+            requests[requestId].requestState = requestStates[-1];
             ALVC_ADDRESS.transfer(fee);
         } else {
             // Error in TC, refund the requester.
@@ -201,10 +213,11 @@ contract FwdOrderly {
         if(!requests[requestId].callbackAddr.call.gas(callbackGas)(requests[requestId].callbackFID, requestId, error, respData)) { // call the callback function in the application contract
             revert();
         }
+        requests[requestId].requestState = requestStates[1];
         externalCallFlag = false;
     }
 
-    function getRequestData(uint64 _requestId) public view returns (uint, uint8, uint, int, bytes32[]) {
+    function getRequestData(uint64 _requestId) public view returns (uint, uint8, uint, bytes32, bytes32[]) {
         Request storage req = requests[_requestId];
         return (req.requestId, req.requestType, req.timestamp, req.requestState, req.requestData);
     }
@@ -228,6 +241,7 @@ contract FwdOrderly {
                 revert();
             }
             externalCallFlag = false;
+            requests[requestId].requestState = requestStates[2];
             emit Cancel(requestId, msg.sender, requests[requestId].requester, requests[requestId].fee, 1);
             return SUCCESS_FLAG;
         } else {
