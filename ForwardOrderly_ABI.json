@@ -1,77 +1,13 @@
 [
 	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "_fwdId",
-				"type": "uint64"
-			}
-		],
-		"name": "getFwdDetail",
-		"outputs": [
-			{
-				"name": "",
-				"type": "bytes32"
-			},
-			{
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"constant": false,
 		"inputs": [
 			{
-				"name": "_newAddr",
+				"name": "newAddr",
 				"type": "address"
 			}
 		],
 		"name": "upgrade",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_fwdId",
-				"type": "uint64"
-			}
-		],
-		"name": "cancelFwd",
-		"outputs": [
-			{
-				"name": "",
-				"type": "int256"
-			}
-		],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_fwdId",
-				"type": "uint64"
-			}
-		],
-		"name": "withdrawFwd",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -102,61 +38,25 @@
 	},
 	{
 		"constant": true,
-		"inputs": [
-			{
-				"name": "",
-				"type": "int256"
-			}
-		],
-		"name": "fwdConts",
+		"inputs": [],
+		"name": "DELIVERED_FEE_FLAG",
 		"outputs": [
 			{
-				"name": "fwdOwner",
-				"type": "address"
-			},
-			{
-				"name": "fwdState",
-				"type": "bytes32"
-			},
-			{
-				"name": "contractDay",
-				"type": "uint256"
-			},
-			{
-				"name": "settlementDay",
-				"type": "uint256"
-			},
-			{
-				"name": "expireDay",
-				"type": "uint256"
-			},
-			{
-				"name": "receiverAddr",
-				"type": "address"
-			},
-			{
-				"name": "senderAddr",
-				"type": "address"
-			},
-			{
-				"name": "fwdFee",
-				"type": "uint256"
-			},
-			{
-				"name": "baseAmt",
-				"type": "uint64"
-			},
-			{
-				"name": "fxRate",
-				"type": "uint64"
-			},
-			{
-				"name": "depositAmt",
+				"name": "",
 				"type": "uint256"
 			}
 		],
 		"payable": false,
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "withdraw",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -177,11 +77,23 @@
 		"constant": false,
 		"inputs": [
 			{
-				"name": "_fwdId",
+				"name": "requestId",
 				"type": "uint64"
+			},
+			{
+				"name": "paramsHash",
+				"type": "bytes32"
+			},
+			{
+				"name": "error",
+				"type": "uint64"
+			},
+			{
+				"name": "respData",
+				"type": "bytes32"
 			}
 		],
-		"name": "cancelFwd_confirm",
+		"name": "deliver",
 		"outputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
@@ -191,20 +103,89 @@
 		"constant": false,
 		"inputs": [
 			{
-				"name": "_fwdId",
+				"name": "requestId",
 				"type": "uint64"
 			}
 		],
-		"name": "emergencyFwd",
+		"name": "cancel",
+		"outputs": [
+			{
+				"name": "",
+				"type": "int256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "int256"
+			}
+		],
+		"name": "requests",
+		"outputs": [
+			{
+				"name": "requestId",
+				"type": "uint256"
+			},
+			{
+				"name": "requestType",
+				"type": "uint8"
+			},
+			{
+				"name": "requester",
+				"type": "address"
+			},
+			{
+				"name": "fee",
+				"type": "uint256"
+			},
+			{
+				"name": "callbackAddr",
+				"type": "address"
+			},
+			{
+				"name": "callbackFID",
+				"type": "bytes4"
+			},
+			{
+				"name": "paramsHash",
+				"type": "bytes32"
+			},
+			{
+				"name": "timestamp",
+				"type": "uint256"
+			},
+			{
+				"name": "requestState",
+				"type": "bytes32"
+			},
+			{
+				"name": "requestData",
+				"type": "bytes32"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "resetunrespond",
 		"outputs": [],
-		"payable": true,
-		"stateMutability": "payable",
+		"payable": false,
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
 		"constant": true,
 		"inputs": [],
-		"name": "FWDO_CONTRACT",
+		"name": "ALVC_ADDRESS",
 		"outputs": [
 			{
 				"name": "",
@@ -216,110 +197,218 @@
 		"type": "function"
 	},
 	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_fwdId",
-				"type": "uint64"
-			}
-		],
-		"name": "emergencyFwd_confirm",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_price",
-				"type": "uint256"
-			},
-			{
-				"name": "_minGas",
-				"type": "uint256"
-			},
-			{
-				"name": "_cancellationGas",
-				"type": "uint256"
-			}
-		],
-		"name": "reset",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_fwdId",
-				"type": "uint64"
-			}
-		],
-		"name": "withdrawFwd_confirm",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_fwdId",
-				"type": "uint64"
-			}
-		],
-		"name": "depositFwd",
-		"outputs": [],
-		"payable": true,
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_contractDay",
-				"type": "uint256"
-			},
-			{
-				"name": "_settlementDay",
-				"type": "uint256"
-			},
-			{
-				"name": "_expireDay",
-				"type": "uint256"
-			},
-			{
-				"name": "_receiverAddr",
-				"type": "address"
-			},
-			{
-				"name": "_senderAddr",
-				"type": "address"
-			},
-			{
-				"name": "_baseAmt",
-				"type": "uint64"
-			}
-		],
-		"name": "createFwd",
-		"outputs": [],
-		"payable": true,
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"constant": false,
+		"constant": true,
 		"inputs": [],
-		"name": "withdraw_fee",
-		"outputs": [],
+		"name": "getRequestIndex",
+		"outputs": [
+			{
+				"name": "",
+				"type": "int256"
+			}
+		],
 		"payable": false,
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_requestId",
+				"type": "uint64"
+			}
+		],
+		"name": "getRequestData",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"name": "",
+				"type": "uint8"
+			},
+			{
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"name": "",
+				"type": "bytes32"
+			},
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "FAIL_FLAG",
+		"outputs": [
+			{
+				"name": "",
+				"type": "int256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "requestCnt",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint64"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "MIN_FEE",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "CANCELLATION_FEE",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "",
+				"type": "int256"
+			}
+		],
+		"name": "requestStates",
+		"outputs": [
+			{
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "GAS_PRICE",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "unrespondedCnt",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint64"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "CANCELLED_FEE_FLAG",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "SUCCESS_FLAG",
+		"outputs": [
+			{
+				"name": "",
+				"type": "int256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [
+			{
+				"name": "requestType",
+				"type": "uint8"
+			},
+			{
+				"name": "callbackAddr",
+				"type": "address"
+			},
+			{
+				"name": "callbackFID",
+				"type": "bytes4"
+			},
+			{
+				"name": "timestamp",
+				"type": "uint256"
+			},
+			{
+				"name": "requestData",
+				"type": "bytes32"
+			}
+		],
+		"name": "request",
+		"outputs": [
+			{
+				"name": "",
+				"type": "int256"
+			}
+		],
+		"payable": true,
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -332,65 +421,25 @@
 		"type": "function"
 	},
 	{
-		"constant": true,
+		"constant": false,
 		"inputs": [
 			{
-				"name": "_fwdId",
-				"type": "uint64"
-			}
-		],
-		"name": "getFwdData",
-		"outputs": [
-			{
-				"name": "",
-				"type": "int64"
+				"name": "price",
+				"type": "uint256"
 			},
 			{
-				"name": "",
-				"type": "address"
+				"name": "minGas",
+				"type": "uint256"
+			},
+			{
+				"name": "cancellationGas",
+				"type": "uint256"
 			}
 		],
+		"name": "resetfees",
+		"outputs": [],
 		"payable": false,
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"constant": true,
-		"inputs": [
-			{
-				"name": "_fwdId",
-				"type": "uint64"
-			}
-		],
-		"name": "getFwdSenseData",
-		"outputs": [
-			{
-				"name": "",
-				"type": "address"
-			},
-			{
-				"name": "",
-				"type": "address"
-			},
-			{
-				"name": "",
-				"type": "uint64"
-			},
-			{
-				"name": "",
-				"type": "uint64"
-			},
-			{
-				"name": "",
-				"type": "uint64"
-			},
-			{
-				"name": "",
-				"type": "int64"
-			}
-		],
-		"payable": false,
-		"stateMutability": "view",
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -408,37 +457,15 @@
 		"type": "function"
 	},
 	{
-		"constant": false,
-		"inputs": [
-			{
-				"name": "_requestId",
-				"type": "uint64"
-			},
-			{
-				"name": "_error",
-				"type": "uint64"
-			},
-			{
-				"name": "_respData",
-				"type": "bytes32"
-			}
-		],
-		"name": "response",
-		"outputs": [],
-		"payable": false,
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"name": "_fwdOCont",
-				"type": "address"
-			}
-		],
+		"inputs": [],
 		"payable": false,
 		"stateMutability": "nonpayable",
 		"type": "constructor"
+	},
+	{
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "fallback"
 	},
 	{
 		"anonymous": false,
@@ -457,17 +484,17 @@
 		"inputs": [
 			{
 				"indexed": false,
-				"name": "gasPrice",
+				"name": "gas_price",
 				"type": "uint256"
 			},
 			{
 				"indexed": false,
-				"name": "minFee",
+				"name": "min_fee",
 				"type": "uint256"
 			},
 			{
 				"indexed": false,
-				"name": "cancellationFee",
+				"name": "cancellation_fee",
 				"type": "uint256"
 			}
 		],
@@ -479,88 +506,46 @@
 		"inputs": [
 			{
 				"indexed": false,
-				"name": "fwdId",
-				"type": "int64"
+				"name": "id",
+				"type": "uint64"
 			},
 			{
 				"indexed": false,
-				"name": "fwdOwner",
-				"type": "address"
+				"name": "requestType",
+				"type": "uint8"
 			},
 			{
 				"indexed": false,
-				"name": "fwdState",
-				"type": "bytes32"
-			},
-			{
-				"indexed": false,
-				"name": "contractDay",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"name": "settlementDay",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"name": "expireDay",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"name": "receiverAddr",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"name": "senderAddr",
+				"name": "requester",
 				"type": "address"
 			},
 			{
 				"indexed": false,
 				"name": "fee",
-				"type": "uint64"
+				"type": "uint256"
 			},
 			{
 				"indexed": false,
-				"name": "baseAmt",
-				"type": "uint64"
-			},
-			{
-				"indexed": false,
-				"name": "fxRate",
-				"type": "uint64"
-			},
-			{
-				"indexed": false,
-				"name": "depositAmt",
-				"type": "int64"
-			}
-		],
-		"name": "ForwardInfo",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"name": "requestId",
-				"type": "int64"
-			},
-			{
-				"indexed": false,
-				"name": "requester",
+				"name": "callbackAddr",
 				"type": "address"
 			},
 			{
 				"indexed": false,
-				"name": "data",
+				"name": "paramsHash",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"name": "timestamp",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "requestData",
 				"type": "bytes32"
 			}
 		],
-		"name": "Request",
+		"name": "RequestInfo",
 		"type": "event"
 	},
 	{
@@ -569,12 +554,32 @@
 			{
 				"indexed": false,
 				"name": "requestId",
-				"type": "int64"
+				"type": "uint64"
 			},
 			{
 				"indexed": false,
-				"name": "requester",
-				"type": "address"
+				"name": "fee",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "gasPrice",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "gasLeft",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "callbackGas",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "paramsHash",
+				"type": "bytes32"
 			},
 			{
 				"indexed": false,
@@ -583,11 +588,11 @@
 			},
 			{
 				"indexed": false,
-				"name": "data",
-				"type": "uint256"
+				"name": "respData",
+				"type": "bytes32"
 			}
 		],
-		"name": "Response",
+		"name": "DeliverInfo",
 		"type": "event"
 	},
 	{
@@ -600,13 +605,23 @@
 			},
 			{
 				"indexed": false,
+				"name": "canceller",
+				"type": "address"
+			},
+			{
+				"indexed": false,
 				"name": "requester",
 				"type": "address"
 			},
 			{
 				"indexed": false,
-				"name": "success",
-				"type": "bool"
+				"name": "fee",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"name": "flag",
+				"type": "int256"
 			}
 		],
 		"name": "Cancel",

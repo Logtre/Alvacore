@@ -219,6 +219,20 @@ contract FwdOrderly {
         externalCallFlag = false;
     }
 
+    function getRequestIndex() public view returns (int) {
+        if (externalCallFlag || killswitch) {
+            revert();
+        }
+
+        int requestsLength = requestCnt;
+
+        for (int i=0; i<requestsLength; i++) {
+            if (requests[i].requestState == requestStates[0]) {
+                return (i);
+            }
+        }
+    }
+
     function getRequestData(uint64 _requestId) public view returns (uint, uint8, uint, bytes32, bytes32) {
         Request storage req = requests[_requestId];
         return (req.requestId, req.requestType, req.timestamp, req.requestState, req.requestData);

@@ -16,15 +16,12 @@ h.setFormatter(logging.Formatter(FORMAT))
 logger.addHandler(h)
 logger.setLevel(logging.INFO)
 
-
 w3 = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/eth_rinkeby_net/geth.ipc')) # on local PC
 w3 = Web3(IPCProvider('/home/ubuntu/.ethereum/rinkeby/geth.ipc')) # on AWS
 
 # rinkebyネットワークに接続するためのコマンドを実行
 w3.middleware_stack.inject(geth_poa_middleware, layer=0)
 
-
-CRED_KEY = '...' # key for indentify the ETHConnector
 
 class ETHConnector:
 
