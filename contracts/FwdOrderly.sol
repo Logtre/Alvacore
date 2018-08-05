@@ -17,10 +17,11 @@ contract FwdOrderly {
     event Upgrade(address newAddr);
     event Reset(uint gas_price, uint min_fee, uint cancellation_fee);
     event RequestInfo(uint64 id, uint8 requestType, address requester, uint fee, address callbackAddr, bytes32 paramsHash, uint timestamp, bytes32 requestData); // log of requests, the Town Crier server watches this event and processes requests
-    event DeliverInfo(uint64 requestId, uint fee, uint gasPrice, uint gasLeft, uint callbackGas, bytes32 paramsHash, uint64 error, bytes32 respData); // log of responses
+    event DeliverInfo(int requestId, uint fee, uint gasPrice, uint gasLeft, uint callbackGas, bytes32 paramsHash, int error, bytes32 respData); // log of responses
     event Cancel(uint64 requestId, address canceller, address requester, uint fee, int flag); // log of cancellations
 
-    address public constant ALVC_ADDRESS = 0xAb1ee2947091B6AF01157E0373EA4966b7Bd2045;// address of the ALVC account@TestNet
+    //address public constant ALVC_ADDRESS = 0xAb1ee2947091B6AF01157E0373EA4966b7Bd2045;// address of the ALVC account@TestNet
+    address public constant ALVC_WALLET = 0xF0c92Ff67dcE58e6d4e6d76C8F1e6b2E36123282;
 
     uint public GAS_PRICE = 50 * 10**10;
     uint public MIN_FEE = 30000 * GAS_PRICE; // minimum fee required for the requester to pay such that SGX could call deliver() to send a response
@@ -160,8 +161,8 @@ contract FwdOrderly {
         }
     }
 
-    function deliver(uint64 requestId, bytes32 paramsHash, uint64 error, bytes32 respData) public {
-        if (msg.sender != ALVC_ADDRESS ||
+    function deliver(int requestId, bytes32 paramsHash, int error, bytes32 respData) public {
+        if (msg.sender != ALVC_WALLET ||
                 requestId <= 0 ||
                 requests[requestId].requester == 0 ||
                 requests[requestId].fee == DELIVERED_FEE_FLAG) {
@@ -181,7 +182,7 @@ contract FwdOrderly {
             // If the request is cancelled by the requester, cancellation
             // fee goes to the SGX account and set the request as having
             // been responded to.
-            ALVC_ADDRESS.transfer(CANCELLATION_FEE);
+            ALVC_WALLET.transfer(CANCELLATION_FEE);
             requests[requestId].fee = DELIVERED_FEE_FLAG;
             requests[requestId].requestState = requestStates[99];
             unrespondedCnt--;
@@ -195,7 +196,7 @@ contract FwdOrderly {
             // Either no error occurs, or the requester sent an invalid query.
             // Send the fee to the SGX account for its delivering.
             requests[requestId].requestState = requestStates[-1];
-            ALVC_ADDRESS.transfer(fee);
+            ALVC_WALLET.transfer(fee);
         } else {
             // Error in TC, refund the requester.
             externalCallFlag = true;

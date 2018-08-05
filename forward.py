@@ -1,16 +1,18 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from moddata import CreateCheckHash, ModifyData
+from moddata import ModifyData
 from apiconnector import ApiConnector
 from ethconnector import ETHConnector
 from dynamoconnector import DynamoConnector
+#from errorprocessor import ErrorChecker
+#from hashprocessor import CreateCheckHash
 
 import json
 
 FWD_ORDERLY_CONTRACT = "0xeDdF01f7C58664660c26624dE8521Da6aD337f7f"
 
-with open("/home/ubuntu/web3/Forward_ABI.json") as fwd:
+with open("/home/ubuntu/web3/ForwardOrderly_ABI.json") as fwd:
     FWD_ABI = json.load(fwd)
 
 with open("/home/ubuntu/web3/CMP_API_KEY.json") as cmp_key:
@@ -26,40 +28,52 @@ PUB_CMP_CODE = {"BTC": 1, "ETH": 1027, "ETC": 1321, "BCC": 1831, "EOS": 1765}
 # クエリ
 #cmp_payload = {'CMC_PRO_API_KEY':CMP_KEY, 'symbol':''}
 
-
 api_con = ApiConnector(pub_cmp_api) # PUBLIC API
 #api_con = ApiConnector(pro_cmp_api) # PRO API
 eth_con = ETHConnector(FWD_ORDERLY_CONTRACT, FWD_ABI)
-create_hash = CreateCheckHash()
+#create_hash = CreateCheckHash()
 mod_data = ModifyData()
+#err_check = ErrorChecker()
 
+err_code = 0
+
+request_data = {
+    'request_id':0,
+    'request_type':0,
+    'timestamp':0,
+    'request_state':"",
+    'request_data':""
+}
+
+api_response_data = {
+    "usd_rate": 0,
+    "symbol": "",
+    "volume_24h": 0,
+    "timestamp": 0,
+    "error": ""
+}
+
+response_data = {
+    'request_id': 0,
+    'params_hash': "",
+    'error': 0,
+    'resp_data': 0
+}
 
 def get_forward_fxrate():
 
     # ETH node経由でOrderlyコントラクトからrequestを取得
-    org_request = eth_con.read_request(FWD_ORDERLY_CONTRACT, FWD_ABI)
+    request_data, params_hash, err_code = eth_con.read_request(request_data)
 
-    # ParamsHash計算用に元のデータ型のrequestを退避
-    org_request_type = request[1]
-    org_request_data = request[4]
+    if err_code < 2:
+        # API経由でCoinMarketCapからresponseを取得
+        api_response_data, err_code = api_con.fetch_fxrate(api_response_data, PUB_CMP_CODE[request_data["request_data"]])
 
-    # requestデータを取り扱いしやすいように整形
-    request_data = mod_data.modify_request_data(org_request)
+    #if err_code < 2:
+        # プロ用API経由でCoinMarketCapからresponseを取得
+        #api_response_data ,err_code = api_con.fetch_fxrate_pro(api_response_data, request_data["request_data"])
 
-    # API経由でCoinMarketCapからresponseを取得
-    api_response = api_con.fetch_fxrate(PUB_CMP_CODE[request_data["request_data_message"]])
-    # responseをjson形式に変換
-    api_response_json = mod_data.modify_api_response_data(api_response)
 
-    # プロ用API経由でCoinMarketCapからresponseを取得
-    #cmp_payload["symbol"] = request_data["request_data_message"]
-    # responseをjson形式に変換
-    #api_response = api_con.fetch_fxrate_pro(cmp_payload)
-
-    # checkdigitを付与
-    check_params_hash = create_hash.create_check_hash(org_request_type, org_request_data)
-
-    if check_params_hash:
-        response_data = mod_data.modify_response_data(request_data, check_params_hash, api_response_json)
-        # ETH node経由でOrderlyコントラクトにresponseを連携
-        response_send = eth_con.provide_response(response_data)
+    response_data = mod_data.modify_response_data(response_data, request_data_data, params_hash, err_code, api_response_data)
+    # ETH node経由でOrderlyコントラクトにresponseを連携
+    response_send = eth_con.deliver_response(response_data)

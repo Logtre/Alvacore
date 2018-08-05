@@ -296,6 +296,8 @@ contract Forward {
 
     uint8 requestType;
     bytes32 requestData;
+    uint8 REQUESTTYPE = 1;
+    bytes32 SYMBOL = "ETH";
 
     bool public killswitch;
 
@@ -348,8 +350,8 @@ contract Forward {
 
         fwdConts[0].fwdOwner = msg.sender;
 
-        requestType = 1;
-        requestData = "ETH";
+        requestType = REQUESTTYPE;
+        requestData = SYMBOL;
 
         killswitch = false;
         externalCallFlag = false;
