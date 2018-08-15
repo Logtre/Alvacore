@@ -74,6 +74,6 @@ def get_forward_fxrate():
         #api_response_data ,err_code = api_con.fetch_fxrate_pro(api_response_data, request_data["request_data"])
 
 
-    response_data = mod_data.modify_response_data(response_data, request_data_data, params_hash, err_code, api_response_data)
+    response_data = mod_data.modify_response_data(response_data, request_data, params_hash, err_code, api_response_data)
     # ETH node経由でOrderlyコントラクトにresponseを連携
     response_send = eth_con.deliver_response(response_data)

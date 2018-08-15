@@ -330,9 +330,12 @@ contract Forward {
     uint reqFee = reqGas * gasPrice;
     uint reqCancellationFee = 25000 * gasPrice;
 
-    uint8 requestType;
+    //uint8 requestType;
+    bytes4 requestType;
     bytes32 requestData;
-    uint8 REQUESTTYPE = 1;
+
+    //uint8 REQUESTTYPE = 1;
+    bytes4 REQUESTTYPE = "FWD";
     bytes32 SYMBOL = "ETH";
 
     bool public killswitch;

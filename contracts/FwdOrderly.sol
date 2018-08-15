@@ -3,7 +3,8 @@ pragma solidity ^0.4.9;
 contract FwdOrderly {
     struct Request { // the data structure for each request
         uint requestId; // the id of request
-        uint8 requestType; // the type of request
+        //uint8 requestType; // the type of request
+        bytes4 requestType
         address requester; // the address of the requester
         uint fee; // the amount of wei the requester pays for the request
         address callbackAddr; // the address of the contract to call for delivering response
@@ -16,12 +17,12 @@ contract FwdOrderly {
 
     event Upgrade(address newAddr);
     event Reset(uint gas_price, uint min_fee, uint cancellation_fee);
-    event RequestInfo(uint64 id, uint8 requestType, address requester, uint fee, address callbackAddr, bytes32 paramsHash, uint timestamp, bytes32 requestData); // log of requests, the Town Crier server watches this event and processes requests
+    event RequestInfo(uint64 id, bytes4 requestType, address requester, uint fee, address callbackAddr, bytes32 paramsHash, uint timestamp, bytes32 requestData); // log of requests, the Town Crier server watches this event and processes requests
     event DeliverInfo(int requestId, uint fee, uint gasPrice, uint gasLeft, uint callbackGas, bytes32 paramsHash, int error, bytes32 respData); // log of responses
     event Cancel(uint64 requestId, address canceller, address requester, uint fee, int flag); // log of cancellations
 
     event RequestState(bytes32 requestState);
-    event GetRequestData(uint requestId, uint8 requestType, uint timestamp, bytes32 requestState, bytes32 requestData);
+    event GetRequestData(uint requestId, bytes4 requestType, uint timestamp, bytes32 requestState, bytes32 requestData);
 
     address public constant ALVC_ADDRESS = 0x35c57fDF4b728CBa1C2F0f107D203e7eE1dbe604; // address of the ALVC ADDRESS @TestNet
     address public constant ALVC_WALLET = 0x39d8aE1155df43D7827bA1073F64343DF6d7707d; // address of the ALVC WALLET @TestNet
@@ -36,6 +37,8 @@ contract FwdOrderly {
     uint public constant DELIVERED_FEE_FLAG = 0;
     int public constant FAIL_FLAG = -2 ** 250;
     int public constant SUCCESS_FLAG = 1;
+
+    bytes4 public KEYWORD = "FWD";
 
     bool public killswitch;
 
@@ -118,8 +121,8 @@ contract FwdOrderly {
         }
     }
 
-    function request(uint8 requestType, address callbackAddr, bytes4 callbackFID, uint timestamp, bytes32 requestData) public payable returns (int) {
-        if (externalCallFlag) {
+    function request(bytes4 requestType, address callbackAddr, bytes4 callbackFID, uint timestamp, bytes32 requestData) public payable returns (int) {
+        if (externalCallFlag ) {
             revert();
         }
 
@@ -130,6 +133,14 @@ contract FwdOrderly {
             }
             externalCallFlag = false;
             return newVersion;
+        }
+
+        if (keccak256(requestType)!=keccak256(KEYWORD)) {
+            externalCallFlag = true;
+            if (!msg.sender.call.value(msg.value)()) {
+                revert();
+            }
+            externalCallFlag = false;
         }
 
         if (msg.value < MIN_FEE) {
@@ -250,7 +261,7 @@ contract FwdOrderly {
         }
     }
 
-    function getRequestData(uint64 _requestId) public view returns (uint, uint8, uint, bytes32, bytes32) {
+    function getRequestData(uint64 _requestId) public view returns (uint, bytes4, uint, bytes32, bytes32) {
         Request storage req = requests[_requestId];
         return (req.requestId, req.requestType, req.timestamp, req.requestState, req.requestData);
     }
