@@ -20,8 +20,13 @@ contract FwdOrderly {
     event DeliverInfo(int requestId, uint fee, uint gasPrice, uint gasLeft, uint callbackGas, bytes32 paramsHash, int error, bytes32 respData); // log of responses
     event Cancel(uint64 requestId, address canceller, address requester, uint fee, int flag); // log of cancellations
 
-    //address public constant ALVC_ADDRESS = 0xAb1ee2947091B6AF01157E0373EA4966b7Bd2045;// address of the ALVC account@TestNet
-    address public constant ALVC_WALLET = 0xF0c92Ff67dcE58e6d4e6d76C8F1e6b2E36123282;
+    event RequestState(bytes32 requestState);
+    event GetRequestData(uint requestId, uint8 requestType, uint timestamp, bytes32 requestState, bytes32 requestData);
+
+    address public constant ALVC_ADDRESS = 0x35c57fDF4b728CBa1C2F0f107D203e7eE1dbe604; // address of the ALVC ADDRESS @TestNet
+    address public constant ALVC_WALLET = 0x39d8aE1155df43D7827bA1073F64343DF6d7707d; // address of the ALVC WALLET @TestNet
+    //address public constant ALVC_ADDRESS = 0x4De735DF7fF5854EBBEEe630Acda8999158E5a69; // address of the ALVC ADDRESS @Ropsten
+    //address public constant ALVC_WALLET = 0xF0F5c6c06Ccd68eD144eBb164a6a660Ec99df54b; // address of the ALVC WALLET @Ropsten
 
     uint public GAS_PRICE = 50 * 10**10;
     uint public MIN_FEE = 30000 * GAS_PRICE; // minimum fee required for the requester to pay such that SGX could call deliver() to send a response
@@ -157,6 +162,8 @@ contract FwdOrderly {
 
             // Log the request for the Town Crier server to process.
             emit RequestInfo(requestId, requestType, msg.sender, msg.value, callbackAddr, paramsHash, timestamp, requestData);
+            emit RequestState(requests[requestId].requestState);
+
             return requestId;
         }
     }
@@ -169,6 +176,7 @@ contract FwdOrderly {
             // If the response is not delivered by the SGX account or the
             // request has already been responded to, discard the response.
             requests[requestId].requestState = requestStates[-1];
+            emit RequestState(requests[requestId].requestState);
             return;
         }
 
@@ -177,14 +185,16 @@ contract FwdOrderly {
             // If the hash of request parameters in the response is not
             // correct, discard the response for security concern.
             requests[requestId].requestState = requestStates[-1];
+            emit RequestState(requests[requestId].requestState);
             return;
         } else if (fee == CANCELLED_FEE_FLAG) {
             // If the request is cancelled by the requester, cancellation
             // fee goes to the SGX account and set the request as having
             // been responded to.
-            ALVC_WALLET.transfer(CANCELLATION_FEE);
+            ALVC_ADDRESS.transfer(CANCELLATION_FEE);
             requests[requestId].fee = DELIVERED_FEE_FLAG;
             requests[requestId].requestState = requestStates[99];
+            emit RequestState(requests[requestId].requestState);
             unrespondedCnt--;
             return;
         }
@@ -196,11 +206,14 @@ contract FwdOrderly {
             // Either no error occurs, or the requester sent an invalid query.
             // Send the fee to the SGX account for its delivering.
             requests[requestId].requestState = requestStates[-1];
-            ALVC_WALLET.transfer(fee);
+            emit RequestState(requests[requestId].requestState);
+            ALVC_ADDRESS.transfer(fee);
         } else {
             // Error in TC, refund the requester.
             externalCallFlag = true;
             if(!requests[requestId].requester.call.gas(2300).value(fee)()) {
+                requests[requestId].requestState = requestStates[-1];
+                emit RequestState(requests[requestId].requestState);
                 revert();
             }
             externalCallFlag = false;
@@ -214,9 +227,12 @@ contract FwdOrderly {
 
         externalCallFlag = true;
         if(!requests[requestId].callbackAddr.call.gas(callbackGas)(requests[requestId].callbackFID, requestId, error, respData)) { // call the callback function in the application contract
+            requests[requestId].requestState = requestStates[-1];
+            emit RequestState(requests[requestId].requestState);
             revert();
         }
         requests[requestId].requestState = requestStates[1];
+        emit RequestState(requests[requestId].requestState);
         externalCallFlag = false;
     }
 
@@ -260,6 +276,7 @@ contract FwdOrderly {
             externalCallFlag = false;
             requests[requestId].requestState = requestStates[2];
             emit Cancel(requestId, msg.sender, requests[requestId].requester, requests[requestId].fee, 1);
+            emit RequestState(requests[requestId].requestState);
             return SUCCESS_FLAG;
         } else {
             emit Cancel(requestId, msg.sender, requests[requestId].requester, fee, -1);

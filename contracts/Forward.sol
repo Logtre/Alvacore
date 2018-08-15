@@ -17,10 +17,16 @@ contract FwdOrderly {
     event Upgrade(address newAddr);
     event Reset(uint gas_price, uint min_fee, uint cancellation_fee);
     event RequestInfo(uint64 id, uint8 requestType, address requester, uint fee, address callbackAddr, bytes32 paramsHash, uint timestamp, bytes32 requestData); // log of requests, the Town Crier server watches this event and processes requests
-    event DeliverInfo(uint64 requestId, uint fee, uint gasPrice, uint gasLeft, uint callbackGas, bytes32 paramsHash, uint64 error, bytes32 respData); // log of responses
+    event DeliverInfo(int requestId, uint fee, uint gasPrice, uint gasLeft, uint callbackGas, bytes32 paramsHash, int error, bytes32 respData); // log of responses
     event Cancel(uint64 requestId, address canceller, address requester, uint fee, int flag); // log of cancellations
 
-    address public constant ALVC_ADDRESS = 0xAb1ee2947091B6AF01157E0373EA4966b7Bd2045;// address of the ALVC account@TestNet
+    event RequestState(bytes32 requestState);
+    event GetRequestData(uint requestId, uint8 requestType, uint timestamp, bytes32 requestState, bytes32 requestData);
+
+    address public constant ALVC_ADDRESS = 0x35c57fDF4b728CBa1C2F0f107D203e7eE1dbe604; // address of the ALVC ADDRESS @TestNet
+    address public constant ALVC_WALLET = 0x39d8aE1155df43D7827bA1073F64343DF6d7707d; // address of the ALVC WALLET @TestNet
+    //address public constant ALVC_ADDRESS = 0x4De735DF7fF5854EBBEEe630Acda8999158E5a69; // address of the ALVC ADDRESS @Ropsten
+    //address public constant ALVC_WALLET = 0xF0F5c6c06Ccd68eD144eBb164a6a660Ec99df54b; // address of the ALVC WALLET @Ropsten
 
     uint public GAS_PRICE = 50 * 10**10;
     uint public MIN_FEE = 30000 * GAS_PRICE; // minimum fee required for the requester to pay such that SGX could call deliver() to send a response
@@ -156,18 +162,21 @@ contract FwdOrderly {
 
             // Log the request for the Town Crier server to process.
             emit RequestInfo(requestId, requestType, msg.sender, msg.value, callbackAddr, paramsHash, timestamp, requestData);
+            emit RequestState(requests[requestId].requestState);
+
             return requestId;
         }
     }
 
-    function deliver(uint64 requestId, bytes32 paramsHash, uint64 error, bytes32 respData) public {
-        if (msg.sender != ALVC_ADDRESS ||
+    function deliver(int requestId, bytes32 paramsHash, int error, bytes32 respData) public {
+        if (msg.sender != ALVC_WALLET ||
                 requestId <= 0 ||
                 requests[requestId].requester == 0 ||
                 requests[requestId].fee == DELIVERED_FEE_FLAG) {
             // If the response is not delivered by the SGX account or the
             // request has already been responded to, discard the response.
             requests[requestId].requestState = requestStates[-1];
+            emit RequestState(requests[requestId].requestState);
             return;
         }
 
@@ -176,6 +185,7 @@ contract FwdOrderly {
             // If the hash of request parameters in the response is not
             // correct, discard the response for security concern.
             requests[requestId].requestState = requestStates[-1];
+            emit RequestState(requests[requestId].requestState);
             return;
         } else if (fee == CANCELLED_FEE_FLAG) {
             // If the request is cancelled by the requester, cancellation
@@ -184,6 +194,7 @@ contract FwdOrderly {
             ALVC_ADDRESS.transfer(CANCELLATION_FEE);
             requests[requestId].fee = DELIVERED_FEE_FLAG;
             requests[requestId].requestState = requestStates[99];
+            emit RequestState(requests[requestId].requestState);
             unrespondedCnt--;
             return;
         }
@@ -195,11 +206,14 @@ contract FwdOrderly {
             // Either no error occurs, or the requester sent an invalid query.
             // Send the fee to the SGX account for its delivering.
             requests[requestId].requestState = requestStates[-1];
+            emit RequestState(requests[requestId].requestState);
             ALVC_ADDRESS.transfer(fee);
         } else {
             // Error in TC, refund the requester.
             externalCallFlag = true;
             if(!requests[requestId].requester.call.gas(2300).value(fee)()) {
+                requests[requestId].requestState = requestStates[-1];
+                emit RequestState(requests[requestId].requestState);
                 revert();
             }
             externalCallFlag = false;
@@ -213,10 +227,27 @@ contract FwdOrderly {
 
         externalCallFlag = true;
         if(!requests[requestId].callbackAddr.call.gas(callbackGas)(requests[requestId].callbackFID, requestId, error, respData)) { // call the callback function in the application contract
+            requests[requestId].requestState = requestStates[-1];
+            emit RequestState(requests[requestId].requestState);
             revert();
         }
         requests[requestId].requestState = requestStates[1];
+        emit RequestState(requests[requestId].requestState);
         externalCallFlag = false;
+    }
+
+    function getRequestIndex() public view returns (int) {
+        if (externalCallFlag || killswitch) {
+            revert();
+        }
+
+        int requestsLength = requestCnt;
+
+        for (int i=0; i<requestsLength; i++) {
+            if (requests[i].requestState == requestStates[0]) {
+                return (i);
+            }
+        }
     }
 
     function getRequestData(uint64 _requestId) public view returns (uint, uint8, uint, bytes32, bytes32) {
@@ -245,6 +276,7 @@ contract FwdOrderly {
             externalCallFlag = false;
             requests[requestId].requestState = requestStates[2];
             emit Cancel(requestId, msg.sender, requests[requestId].requester, requests[requestId].fee, 1);
+            emit RequestState(requests[requestId].requestState);
             return SUCCESS_FLAG;
         } else {
             emit Cancel(requestId, msg.sender, requests[requestId].requester, fee, -1);
@@ -252,6 +284,7 @@ contract FwdOrderly {
         }
     }
 }
+
 
 contract Forward {
     struct FwdCont { // the data struct for forward contract
@@ -278,8 +311,11 @@ contract Forward {
     uint minGas = 30000 + 20000; // minimum gas required for a query
     uint gasPrice = 5 * 10 ** 10;
     uint minFee = 30000 * gasPrice;
-    uint alvcFee = minGas * gasPrice;
-    uint cancellationFee = 25000 * gasPrice;
+    uint fwdFetchRateFee = minGas * gasPrice;
+    uint fwdDepositFee = minGas * gasPrice;
+    uint fwdConfirmFee = minGas * gasPrice;
+    uint fwdWithdrawFee = minGas * gasPrice;
+    uint fwdCancellationFee = 25000 * gasPrice;
 
     uint constant CANCELLED_FEE_FLAG = 1;
     uint constant DELIVERED_FEE_FLAG = 0;
@@ -290,9 +326,9 @@ contract Forward {
 
     FwdOrderly public FWDO_CONTRACT;
 
-    uint fwdGas = 30000 + 20000;
-    uint fwdFee = fwdGas * gasPrice;
-    uint fwdCancellationFee = cancellationFee;
+    uint reqGas = 30000 + 20000;
+    uint reqFee = reqGas * gasPrice;
+    uint reqCancellationFee = 25000 * gasPrice;
 
     uint8 requestType;
     bytes32 requestData;
@@ -312,6 +348,8 @@ contract Forward {
     mapping (uint64 => uint) requestFees; // the mapping to link requestId and fee (key:requestId)
 
     int public newVersion = 0;
+
+    //address public constant FWD_ADDRESS = 0x4De735DF7fF5854EBBEEe630Acda8999158E5a69; // address of the ALVC ADDRESS @Ropsten
 
     modifier onlyOwner() {
         require(msg.sender == fwdConts[0].fwdOwner);
@@ -333,8 +371,8 @@ contract Forward {
         _;
     }
 
-    constructor(FwdOrderly _fwdOCont) public { // constractor
-        FWDO_CONTRACT = _fwdOCont; // storing the address of the FWDO_CONTRACT Contract
+    constructor(address _addr) public { // constractor
+        FWDO_CONTRACT = FwdOrderly(_addr); // storing the address of the FWDO_CONTRACT Contract
         fwdCnt = 1;
 
         fwdStates[-1] = "error";
@@ -380,7 +418,7 @@ contract Forward {
         fwdConts[fwdId].expireDay = _expireDay;
         fwdConts[fwdId].receiverAddr = _receiverAddr;
         fwdConts[fwdId].senderAddr = _senderAddr;
-        fwdConts[fwdId].fwdFee = msg.value;
+        fwdConts[fwdId].fwdFee = 0;
         fwdConts[fwdId].baseAmt = _baseAmt;
         fwdConts[fwdId].fxRate = 0;
         fwdConts[fwdId].depositAmt = 0;
@@ -389,7 +427,7 @@ contract Forward {
 
         //int requestId = request(fwdId, REQUESTTYPE, timestamp, REQUESTDATA); // calling request() in the Forward Contract
 
-        if (msg.value < alvcFee + fwdFee) {
+        if (msg.value < fwdFetchRateFee + fwdDepositFee + fwdConfirmFee + fwdWithdrawFee + reqFee) {
             // The requester paid less fee than required.
             // Reject the request and refund the requester.
             if (!msg.sender.send(msg.value)) {
@@ -399,7 +437,7 @@ contract Forward {
             return;
         }
 
-        int requestId = FWDO_CONTRACT.request.value(msg.value - fwdFee)(requestType, fwdConts[fwdId].receiverAddr, FWD_CALLBACK_FID, 0, requestData); // calling request() in the FWDO_CONTRACT Contract
+        int requestId = FWDO_CONTRACT.request.value(reqFee)(requestType, fwdConts[fwdId].receiverAddr, FWD_CALLBACK_FID, 0, requestData); // calling request() in the FWDO_CONTRACT Contract
         if (requestId <= 0) {
             // The request fails.
             // Refund the requester.
@@ -413,8 +451,8 @@ contract Forward {
         // Successfully sent a request to TC.
         // Record the request.
         fwdRequests[uint64(requestId)] = fwdId; // Linkage requestId and fwdId
-        requestFees[uint64(requestId)] = msg.value; // Linkage requestId and fwdId
-        fwdConts[fwdId].fwdFee = fwdFee;
+        requestFees[uint64(requestId)] = reqFee; // Linkage requestId and fwdId
+        fwdConts[fwdId].fwdFee = msg.value - reqFee;
 
         fwdConts[fwdId].fwdState = fwdStates[1];
 
@@ -467,7 +505,7 @@ contract Forward {
             externalCallFlag = false;
         }
 
-        if (msg.value < fwdConts[_fwdId].depositAmt + fwdConts[_fwdId].fwdFee) {
+        if (msg.value < fwdConts[_fwdId].depositAmt) {
             // The requester paid less fee than required.
             // Reject the request and refund the requester.
             if (!msg.sender.send(msg.value)) {
@@ -489,9 +527,9 @@ contract Forward {
             return;
         }
 
-        fwdConts[_fwdId].depositAmt = msg.value - fwdFee;
+        fwdConts[_fwdId].depositAmt = msg.value;
         fwdConts[_fwdId].fwdState = fwdStates[2];
-        fwdConts[_fwdId].fwdFee += fwdFee;
+        fwdConts[_fwdId].fwdFee -= fwdDepositFee;
 
         emit ForwardInfo(int64(_fwdId),
                 fwdConts[_fwdId].fwdOwner,
@@ -508,20 +546,43 @@ contract Forward {
         return;
     }
 
-    function withdrawFwd_confirm(uint64 _fwdId) onlySender(_fwdId) public {
+    function withdrawFwd_confirm(uint64 _fwdId) onlySender(_fwdId) public payable {
+
+        if (fwdConts[_fwdId].fwdFee + msg.value < fwdConfirmFee) {
+            if (!msg.sender.send(msg.value)) {
+                revert();
+            }
+
+            emit ForwardInfo(int64(_fwdId),
+              fwdConts[_fwdId].fwdOwner,
+              fwdConts[_fwdId].fwdState,
+              uint(fwdConts[_fwdId].contractDay),
+              uint(fwdConts[_fwdId].settlementDay),
+              uint(fwdConts[_fwdId].expireDay),
+              fwdConts[_fwdId].receiverAddr,
+              fwdConts[_fwdId].senderAddr,
+              uint64(fwdConts[_fwdId].fwdFee),
+              fwdConts[_fwdId].baseAmt,
+              fwdConts[_fwdId].fxRate,
+              int64(fwdConts[fwdId].depositAmt));
+        }
+
+        fwdConts[_fwdId].fwdState = fwdStates[3];
+        fwdConts[_fwdId].fwdFee -= fwdConfirmFee;
 
         emit ForwardInfo(int64(_fwdId),
-                fwdConts[_fwdId].fwdOwner,
-                fwdConts[_fwdId].fwdState,
-                uint(fwdConts[_fwdId].contractDay),
-                uint(fwdConts[_fwdId].settlementDay),
-                uint(fwdConts[_fwdId].expireDay),
-                fwdConts[_fwdId].receiverAddr,
-                fwdConts[_fwdId].senderAddr,
-                uint64(fwdConts[_fwdId].fwdFee),
-                fwdConts[_fwdId].baseAmt,
-                fwdConts[_fwdId].fxRate,
-                int64(fwdConts[fwdId].depositAmt));
+          fwdConts[_fwdId].fwdOwner,
+          fwdConts[_fwdId].fwdState,
+          uint(fwdConts[_fwdId].contractDay),
+          uint(fwdConts[_fwdId].settlementDay),
+          uint(fwdConts[_fwdId].expireDay),
+          fwdConts[_fwdId].receiverAddr,
+          fwdConts[_fwdId].senderAddr,
+          uint64(fwdConts[_fwdId].fwdFee),
+          fwdConts[_fwdId].baseAmt,
+          fwdConts[_fwdId].fxRate,
+          int64(fwdConts[fwdId].depositAmt));
+
         return;
     }
 
@@ -554,23 +615,7 @@ contract Forward {
         }
         externalCallFlag = false;
 
-        emit ForwardInfo(int64(_fwdId),
-            fwdConts[_fwdId].fwdOwner,
-            fwdConts[_fwdId].fwdState,
-            uint(fwdConts[_fwdId].contractDay),
-            uint(fwdConts[_fwdId].settlementDay),
-            uint(fwdConts[_fwdId].expireDay),
-            fwdConts[_fwdId].receiverAddr,
-            fwdConts[_fwdId].senderAddr,
-            uint64(fwdConts[_fwdId].fwdFee),
-            fwdConts[_fwdId].baseAmt,
-            fwdConts[_fwdId].fxRate,
-            int64(fwdConts[fwdId].depositAmt));
-        return;
-    }
-
-    function cancelFwd_confirm(uint64 _fwdId) onlyAuthorized(_fwdId) public {
-        fwdConts[_fwdId].fwdState = fwdStates[11];
+        fwdConts[_fwdId].fwdFee -= fwdWithdrawFee;
 
         emit ForwardInfo(int64(_fwdId),
             fwdConts[_fwdId].fwdOwner,
@@ -587,39 +632,68 @@ contract Forward {
         return;
     }
 
-    function cancelFwd(uint64 _fwdId) onlyAuthorized(_fwdId) public returns (int) {
+    function cancelFwd_confirm(uint64 _fwdId) onlyAuthorized(_fwdId) public payable {
+
+      if (msg.value < fwdCancellationFee + fwdConfirmFee) {
+          if (!msg.sender.send(msg.value)) {
+              revert();
+          }
+      }
+
+      fwdConts[_fwdId].fwdState = fwdStates[11];
+      uint cancelFee = msg.value - fwdConfirmFee;
+      fwdConts[_fwdId].fwdFee += cancelFee;
+
+      emit ForwardInfo(int64(_fwdId),
+          fwdConts[_fwdId].fwdOwner,
+          fwdConts[_fwdId].fwdState,
+          uint(fwdConts[_fwdId].contractDay),
+          uint(fwdConts[_fwdId].settlementDay),
+          uint(fwdConts[_fwdId].expireDay),
+          fwdConts[_fwdId].receiverAddr,
+          fwdConts[_fwdId].senderAddr,
+          uint64(fwdConts[_fwdId].fwdFee),
+          fwdConts[_fwdId].baseAmt,
+          fwdConts[_fwdId].fxRate,
+          int64(fwdConts[fwdId].depositAmt));
+      return;
+    }
+
+    function cancelFwd(uint64 _fwdId) onlyAuthorized(_fwdId) public payable {
         if (externalCallFlag) {
             revert();
         }
 
         if (killswitch) {
-            return 0;
+            return;
         }
 
         require(fwdConts[_fwdId].fwdState == fwdStates[11]);
 
-        uint fee = fwdConts[_fwdId].fwdFee;
-        if (fee >= cancellationFee) {
+        uint fee = fwdConts[_fwdId].fwdFee + msg.value;
+        if (fee >= fwdCancellationFee) {
             // If the request was sent by this user and has money left on it,
             // then cancel it.
             fwdConts[_fwdId].fwdFee = CANCELLED_FEE_FLAG;
 
             externalCallFlag = true;
-            if (!fwdConts[_fwdId].receiverAddr.send(fwdConts[_fwdId].depositAmt)) {
+            if (!fwdConts[_fwdId].receiverAddr.send(fwdConts[_fwdId].depositAmt + fwdWithdrawFee)) {
                 revert();
             }
             externalCallFlag = false;
 
             emit Cancel(_fwdId, msg.sender, true);
-            return SUCCESS_FLAG;
+            return;
         } else {
             emit Cancel(_fwdId, msg.sender, false);
-            return FAIL_FLAG;
+            return;
         }
     }
 
-    function emergencyFwd_confirm(uint64 _fwdId) onlySender(_fwdId) public {
+    function emergencyFwd_confirm(uint64 _fwdId) onlySender(_fwdId) public payable {
         fwdConts[_fwdId].fwdState = fwdStates[21];
+        uint emergencyFee = msg.value - fwdConfirmFee;
+        fwdConts[_fwdId].fwdFee += emergencyFee;
 
         emit ForwardInfo(int64(_fwdId),
             fwdConts[_fwdId].fwdOwner,
@@ -640,14 +714,14 @@ contract Forward {
         require(fwdConts[_fwdId].fwdState == fwdStates[21]);
 
         uint fee = fwdConts[_fwdId].fwdFee + msg.value;
-        if (fee >= cancellationFee) {
+        if (fee >= fwdCancellationFee) {
             // If the request was sent by this user and has money left on it,
             // then cancel it.
             //fwdData.fwdFee = CANCELLED_FEE_FLAG;
             uint emergencyReturnAmt = fwdConts[_fwdId].depositAmt * 9 / 10;
 
-            if (emergencyReturnAmt > cancellationFee) {
-                uint emergencyFee = emergencyReturnAmt - cancellationFee;
+            if (emergencyReturnAmt > fwdCancellationFee) {
+                uint emergencyFee = emergencyReturnAmt - fwdCancellationFee;
             } else {
                 revert();
             }
@@ -680,16 +754,22 @@ contract Forward {
         if (externalCallFlag == false) {
             gasPrice = _price;
             minFee = _price * _minGas;
-            cancellationFee = _price * _cancellationGas;
-            emit Reset(gasPrice, minFee, cancellationFee);
+            fwdCancellationFee = _price * _cancellationGas;
+            emit Reset(gasPrice, minFee, fwdCancellationFee);
         }
     }
 
-    function withdraw_fee() onlyOwner() public {
+    function withdraw_fee_all() onlyOwner() public {
         for (int targetFwd=1; targetFwd <= fwdCnt; targetFwd++) {
             if (!fwdConts[0].fwdOwner.send(fwdConts[targetFwd].fwdFee)) {
                 revert();
             }
+        }
+    }
+
+    function withdraw_fee(uint64 _fwdId) onlyOwner() public {
+        if (!fwdConts[0].fwdOwner.send(fwdConts[_fwdId].fwdFee)) {
+                revert();
         }
     }
 
@@ -757,6 +837,10 @@ contract Forward {
         //requesters[requestId] = 0; // set the request as responded
 
         if (_error < 2) {
+
+            if (!fwdConts[0].fwdOwner.send(requestfee)) {
+                    revert();
+            }
             emit Response(int64(_requestId), requester, _error, uint(_respData));
         } else {
             requester.transfer(requestfee);

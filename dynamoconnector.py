@@ -73,7 +73,7 @@ class DynamoConnector:
                                 symbol = :val3, \
                                 volume_24h = :val4, \
                                 timestamp = :val5, \
-                                error_message = :val6 \
+                                error = :val6 \
                              }'
 
         update_attr_val = {
