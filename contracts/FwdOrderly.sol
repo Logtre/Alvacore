@@ -4,7 +4,7 @@ contract FwdOrderly {
     struct Request { // the data structure for each request
         uint requestId; // the id of request
         //uint8 requestType; // the type of request
-        bytes4 requestType
+        bytes4 requestType;
         address requester; // the address of the requester
         uint fee; // the amount of wei the requester pays for the request
         address callbackAddr; // the address of the contract to call for delivering response
@@ -24,7 +24,7 @@ contract FwdOrderly {
     event RequestState(bytes32 requestState);
     event GetRequestData(uint requestId, bytes4 requestType, uint timestamp, bytes32 requestState, bytes32 requestData);
 
-    address public constant ALVC_ADDRESS = 0x35c57fDF4b728CBa1C2F0f107D203e7eE1dbe604; // address of the ALVC ADDRESS @TestNet
+    address public constant ALVC_ADDRESS = 0xD7E2b2857fA34F08Db2262Fb684A3782BC750e70; // address of the ALVC ADDRESS @TestNet
     address public constant ALVC_WALLET = 0x39d8aE1155df43D7827bA1073F64343DF6d7707d; // address of the ALVC WALLET @TestNet
     //address public constant ALVC_ADDRESS = 0x4De735DF7fF5854EBBEEe630Acda8999158E5a69; // address of the ALVC ADDRESS @Ropsten
     //address public constant ALVC_WALLET = 0xF0F5c6c06Ccd68eD144eBb164a6a660Ec99df54b; // address of the ALVC WALLET @Ropsten
@@ -135,7 +135,7 @@ contract FwdOrderly {
             return newVersion;
         }
 
-        if (keccak256(requestType)!=keccak256(KEYWORD)) {
+        if (keccak256(abi.encodePacked(requestType))!=keccak256(abi.encodePacked(KEYWORD))) {
             externalCallFlag = true;
             if (!msg.sender.call.value(msg.value)()) {
                 revert();
