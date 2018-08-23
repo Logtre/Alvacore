@@ -13,7 +13,7 @@ class CreateCheckHash:
     def create_check_hash(request_type, request_data):
 
         #check_hash = hashlib.sha256(request_type, request_data).hexdigest()
-        check_hash = Web3.soliditySha3(['uint8', 'bytes32'], [request_type, request_data]).hex()[2:]
+        check_hash = Web3.soliditySha3(['bytes32', 'bytes32'], [request_type, request_data]).hex()[2:]
 
         if check_hash:
             return check_hash

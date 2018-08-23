@@ -10,9 +10,9 @@ from dynamoconnector import DynamoConnector
 
 import json
 
-FWD_ORDERLY_CONTRACT = "0xeDdF01f7C58664660c26624dE8521Da6aD337f7f"
+FWD_ORDERLY_CONTRACT = "0x3139F276560577b9f34E18D0d4fa6fC51d1459Ac"
 
-with open("/home/ubuntu/web3/ForwardOrderly_ABI.json") as fwd:
+with open("/home/ubuntu/web3/FwdOrderly_ABI.json") as fwd:
     FWD_ABI = json.load(fwd)
 
 with open("/home/ubuntu/web3/CMP_API_KEY.json") as cmp_key:

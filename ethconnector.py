@@ -51,13 +51,13 @@ class ETHConnector:
 
         if target_request.length > 0:
             # paramsHashを付与
-            params_hash = create_hash.create_check_hash(target_request[1], target_request[4])
+            params_hash = create_hash.create_check_hash(target_request[0], target_request[3])
             # request_dataを更新
-            arg['request_id'] = target_request[0]
-            arg['request_type'] = target_request[1]
-            arg['timestamp'] = target_request[2]
-            arg['request_state'] = mod_data.extract_text(target_request[3])
-            arg['request_data'] = mod_data.extract_text(target_request[4])
+            arg['request_id'] = target_request_id
+            arg['request_type'] = target_request[0]
+            arg['timestamp'] = target_request[1]
+            arg['request_state'] = mod_data.extract_text(target_request[2])
+            arg['request_data'] = mod_data.extract_text(target_request[3])
             }
             return arg, params_hash, 0
         else:
