@@ -223,11 +223,13 @@ contract FwdOrderly is FwdBase {
     function getRequestIndex() public view returns(int) {
         int requestsLength = requestCnt;
 
-        for (int i=0; i<requestsLength; i++) {
+        for (int i=1; i<requestsLength; i++) {
             if (requestIndexToState[i] == requestStates[0]) {
                 return (i);
             }
         }
+        // there is request to match requestState
+        return 0;
     }
 
     function getRequest(int _requestId) view public returns(bytes32, int, bytes32, bytes32) {
