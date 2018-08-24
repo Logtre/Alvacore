@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
-#from web3 import Web3, IPCProvider
-#from web3.middleware import geth_poa_middleware
+from web3 import Web3, IPCProvider
+from web3.middleware import geth_poa_middleware
 from hashprocessor import CreateCheckHash
 from moddata import ModifyData
 import init
