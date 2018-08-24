@@ -10,7 +10,33 @@ import logging
 class ETHConnector:
 
     def __init__(self, bc_network):
-        self.w3 = init.set_IPCProvider(bc_network)
+        self.python_env = init.get_env()
+        if self.python_env.startswith('mac') or python_env.startswith('win'):
+            # @Main net
+            if bc_network == 1:
+                self.w3 = Web3(IPCProvider('path/to/ipc'))
+            # @Ropsten testnet
+            elif bc_network == 3:
+                self.w3 = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/aws_testnet/geth.ipc'))
+                #ipcprovider = Web3(IPCProvider('/Users/user/Library/Application Support/io.parity.ethereum/jsonrpc.ipc'))
+            # @Rinkeby testnet
+            elif bc_network == 4:
+                self.w3 = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/eth_rinkeby_net/geth.ipc'))
+                ipcprovider.middleware_stack.inject(geth_poa_middleware, layer=0)
+        elif self.python_env.startswith('lin'):
+            # @Main net
+            if bc_network == 1:
+                self.w3 = Web3(IPCProvider('path/to/ipc'))
+            # @Ropsten testnet
+            elif bc_network == 3:
+                self.w3 = Web3(IPCProvider('/home/ubuntu/.local/share/io.parity.ethereum/jsonrpc.ipc'))
+            # @Rinkeby testnet
+            elif bc_network == 4:
+                self.w3 = Web3(IPCProvider('/home/ubuntu/.ethereum/rinkeby/geth.ipc'))
+                ipcprovider.middleware_stack.inject(geth_poa_middleware, layer=0)
+        else:
+            self.w3 = ''
+        #self.w3 = init.set_IPCProvider(bc_network)
         self.addr = init.set_address(bc_network)
         self.abi = init.set_ABI()
         self.contract = self.w3.eth.contract(address = self.addr,abi = self.abi)

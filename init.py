@@ -43,7 +43,7 @@ def set_address(bc_network):
 
 def set_IPCProvider(bc_network):
     ipcprovider = ''
-    python_env = python_env = get_env()
+    python_env = get_env()
     # executed in Local
     if python_env.startswith('mac') or python_env.startswith('win'):
         # @Main net
