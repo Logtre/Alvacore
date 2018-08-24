@@ -9,7 +9,7 @@ from apiconnector import ApiConnector
 from ethconnector import ETHConnector
 #from dynamoconnector import DynamoConnector
 #from errorprocessor import ErrorChecker
-from hashprocessor import CreateCheckHash
+#from hashprocessor import CreateCheckHash
 
 import json
 import logdefinition as logdef
@@ -27,6 +27,26 @@ PUB_CMP_CODE = {"BTC": 1, "ETH": 1027, "ETC": 1321, "BCC": 1831, "EOS": 1765}
 err_code = 0
 
 def get_forward_fxrate(bc_network):
+    request_data = {
+        'request_id':0,
+        'request_type':0,
+        'timestamp':0,
+        'request_state':"",
+        'request_data':""
+    }
+    api_response_data = {
+        "usd_rate": 0,
+        "symbol": "",
+        "volume_24h": 0,
+        "timestamp": 0,
+        "error": ""
+    }
+    response_data = {
+        'request_id': 0,
+        'params_hash': "",
+        'error': 0,
+        'resp_data': 0
+    }
     api_con = ApiConnector(pub_cmp_api) # PUBLIC API
     #api_con = ApiConnector(pro_cmp_api) # PRO API
     eth_con = ETHConnector(bc_network)
@@ -40,15 +60,15 @@ def get_forward_fxrate(bc_network):
 
     if err_code < 2:
         # API経由でCoinMarketCapからresponseを取得
-        logger.info("start connecting to CMP API.")
+        logdef.logger.info("start connecting to CMP API.")
         api_response_data, err_code = api_con.fetch_fxrate(PUB_CMP_CODE[request_data["request_data"]])
 
     #if err_code < 2:
         # プロ用API経由でCoinMarketCapからresponseを取得
         #api_response_data ,err_code = api_con.fetch_fxrate_pro(api_response_data, request_data["request_data"])
 
-    logger.info("start modifying response data.")
+    logdef.logger.info("start modifying response data.")
     response_data = mod_data.modify_response_data(request_data, params_hash, err_code, api_response_data)
     # ETH node経由でOrderlyコントラクトにresponseを連携
-    logger.info("start connecting to BCNetwork for deliver data.")
+    logdef.logger.info("start connecting to BCNetwork for deliver data.")
     response_send = eth_con.deliver_response(response_data)

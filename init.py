@@ -3,6 +3,7 @@
 import sys
 from web3 import Web3, IPCProvider
 from web3.middleware import geth_poa_middleware
+import logdefinition as logdef
 import json
 
 def get_env():
@@ -13,6 +14,7 @@ def get_env():
         platform = 'mac'
     elif sys.platform.startswith('linux'):
         platform = 'lnx'
+    logdef.logger.info("success get platform:{}".format(platform))
     return platform + ('32' if sys.maxsize < 2**31 else '64')
 
 def set_ABI():
@@ -26,6 +28,7 @@ def set_ABI():
     elif python_env.startswith('lin'):
         with open('/home/ubuntu/web3/FwdOrderly_ABI.json') as json_file:
             abi = json.load(json_file)
+    #logdef.logger.info("success get abi:{}".format(abi))
     return abi
 
 def set_address(bc_network):
@@ -39,6 +42,7 @@ def set_address(bc_network):
     # @Rinkeby testnet
     elif bc_network == 4:
         contracts_address = 'set_your_address'
+    logdef.logger.info("success get address:{}".format(contracts_address))
     return contracts_address
 
 def set_IPCProvider(bc_network):

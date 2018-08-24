@@ -87,6 +87,26 @@ contract FwdBase is FwdAccessControl {
         newVersion = 0;
     }
 
+    function _convertBytesToBytes8(bytes inBytes) internal pure returns (bytes8 outBytes8) {
+        if (inBytes.length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            outBytes8 := mload(add(inBytes, 8))
+        }
+    }
+
+    function _convertBytesToBytes32(bytes inBytes) internal pure returns (bytes32 outBytes32) {
+        if (inBytes.length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            outBytes32 := mload(add(inBytes, 32))
+        }
+    }
+
     function _withdraw() internal {
         if (!owner.call.value(address(this).balance)()) {
             revert();
@@ -424,6 +444,10 @@ contract FwdOrderlyAdmin is FwdOrderly {
     function setNewVersion(address _newAddr) onlyOwner() public {
         _setNewVersion(_newAddr);
     }
+
+    function setRequestState(int _requestId, uint _index) onlyOwner() public {
+        _setRequestState(_requestId, _index);
+    }
 }
 
 
@@ -558,7 +582,7 @@ contract FwdCont is FwdBase {
         reqGas = _reqGas;
     }
 
-    function _setOrderly(address _requestOrderly) onlyOwner() public {
+    function setOrderly(address _requestOrderly) onlyOwner() public {
         requestOrderly = FwdOrderlyRequest(_requestOrderly);
 
         setOrderly = true;

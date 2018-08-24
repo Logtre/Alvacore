@@ -6,8 +6,8 @@ from boto3.dynamodb.conditions import Key, Attr
 class DynamoConnector:
 
     def __init__(self, table_name):
-        dynamodb = boto3.resource("dynamodb")
-        FUT_TABLE = dynamodb.table(table_name)
+        self.dynamodb = boto3.resource("dynamodb")
+        self.FUT_TABLE = self.dynamodb.table(table_name)
 
     def create_fut_reservation(request_data):
 
@@ -38,7 +38,7 @@ class DynamoConnector:
             }
         }
 
-        response = FUT_TABLE.put_item(
+        response = self.FUT_TABLE.put_item(
             Item = item_exp
         )
 
@@ -49,7 +49,7 @@ class DynamoConnector:
             return False
 
     def read_fut_reservation(timestamp):
-        response = FUT_TABLE.scan(
+        response = self.FUT_TABLE.scan(
             FilterExpression = Attr("reservation_date").lt(timestamp) & Attr("request_state").eq("listed_db")
         )
 
@@ -84,7 +84,7 @@ class DynamoConnector:
             ":val6": resp_data["metadata"]["error"]
         }
 
-        response = FUT_TABLE.update_item(
+        response = self.FUT_TABLE.update_item(
             Key = key_exp,
             UpdateExpression = update_exp,
             ExpressionAttributeValues = update_attr_val
