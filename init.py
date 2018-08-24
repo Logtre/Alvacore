@@ -1,0 +1,78 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+import sys
+from web3 import Web3, IPCProvider
+from web3.middleware import geth_poa_middleware
+import json
+
+def get_env():
+    platform = ''
+    if sys.platform.startswith('win') or sys.platform.startswith('cygwin'):
+        platform = 'win'
+    elif sys.platform.startswith('darwin'):
+        platform = 'mac'
+    elif sys.platform.startswith('linux'):
+        platform = 'lnx'
+    return platform + ('32' if sys.maxsize < 2**31 else '64')
+
+def set_ABI():
+    abi = ''
+    python_env = get_env()
+    # executed in Local
+    if python_env.startswith('mac') or python_env.startswith('win'):
+        with open('/Users/user/ubuntu/web3/FwdOrderly_ABI.json') as json_file:
+            abi = json.load(json_file)
+    # executed in AWS
+    elif python_env.startswith('lin'):
+        with open('/home/ubuntu/web3/FwdOrderly_ABI.json') as json_file:
+            abi = json.load(json_file)
+    return abi
+
+def set_address(bc_network):
+    contracts_address = ''
+    # @Main net
+    if bc_network == 1:
+        contracts_address = 'set_your_address'
+    # @Ropsten testnet
+    elif bc_network == 3:
+        contracts_address = '0x849D10cd04e736e9FF176390849792F04781480F'
+    # @Rinkeby testnet
+    elif bc_network == 4:
+        contracts_address = 'set_your_address'
+    return contracts_address
+
+def set_IPCProvider(bc_network):
+    ipcprovider = ''
+    python_env = python_env = get_env()
+    # executed in Local
+    if python_env.startswith('mac') or python_env.startswith('win'):
+        # @Main net
+        if bc_network == 1:
+            ipcprovider = Web3(IPCProvider('path/to/ipc'))
+        # @Ropsten testnet
+        elif bc_network == 3:
+            ipcprovider = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/aws_testnet/geth.ipc'))
+            #ipcprovider = Web3(IPCProvider('/Users/user/Library/Application Support/io.parity.ethereum/jsonrpc.ipc'))
+        # @Rinkeby testnet
+        elif bc_network == 4:
+            ipcprovider = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/eth_rinkeby_net/geth.ipc'))
+            ipcprovider.middleware_stack.inject(geth_poa_middleware, layer=0)
+    elif python_env.startswith('lin'):
+        # @Main net
+        if bc_network == 1:
+            ipcprovider = Web3(IPCProvider('path/to/ipc'))
+        # @Ropsten testnet
+        elif bc_network == 3:
+            ipcprovider = Web3(IPCProvider('/home/ubuntu/.local/share/io.parity.ethereum/jsonrpc.ipc'))
+        # @Rinkeby testnet
+        elif bc_network == 4:
+            ipcprovider = Web3(IPCProvider('/home/ubuntu/.ethereum/rinkeby/geth.ipc'))
+            ipcprovider.middleware_stack.inject(geth_poa_middleware, layer=0)
+    return ipcprovider
+
+def set_cmp_key(path):
+    key = ''
+    keypath = path + 'CMP_API_KEY.json'
+    with open(keypath) as json_file:
+        key = json.load(json_file)
+    return key

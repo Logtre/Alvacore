@@ -1,39 +1,21 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
-from web3 import Web3, IPCProvider
-from web3.middleware import geth_poa_middleware
+#from web3 import Web3, IPCProvider
+#from web3.middleware import geth_poa_middleware
 from hashprocessor import CreateCheckHash
 from moddata import ModifyData
+import init
 import logging
 
 class ETHConnector:
 
-    def __init__(self, addr, abi):
-        ###### for LOCAL ######
-        # Ropsten
-        self.w3 = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/aws_testnet/geth.ipc'))
-        #self.w3 = Web3(IPCProvider('/Users/user/Library/Application Support/io.parity.ethereum/jsonrpc.ipc'))
-        # Rinkeby
-        # w3 = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/eth_rinkeby_net/geth.ipc')) # geth
-        # w3.middleware_stack.inject(geth_poa_middleware, layer=0)
-        # Mainnet
-        # w3 = Web3(IPCProvider('path/to/ipc'))
-
-        """
-        ###### for AWS ######
-        # Ropsten
-        w3 = Web3(IPCProvider('/home/ubuntu/.local/share/io.parity.ethereum/jsonrpc.ipc')) # parity
-        # Rinkeby
-        # w3 = Web3(IPCProvider('/home/ubuntu/.ethereum/rinkeby/geth.ipc')) # geth
-        # Mainnet
-        # w3 = Web3(IPCProvider('path/to/ipc'))
-        """
-
+    def __init__(self, bc_network):
+        self.w3 = init.set_IPCProvider(bc_network)
+        self.addr = init.set_address(bc_network)
+        self.abi = init.set_ABI()
+        self.contract = self.w3.eth.contract(address = self.addr,abi = self.abi)
         self.create_hash = CreateCheckHash()
         self.mod_data = ModifyData()
-        self.addr = addr
-        self.abi = abi
-        self.contract = self.w3.eth.contract(address = addr,abi = abi)
         self.target_request_id = 0
         self.target_request = []
         self.params_hash = ""
