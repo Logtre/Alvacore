@@ -3,7 +3,6 @@
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 
-
 class DynamoConnector:
 
     def __init__(self, table_name):

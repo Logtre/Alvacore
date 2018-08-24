@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+import sys
 import hashlib
 from web3 import Web3
 import json

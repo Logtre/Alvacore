@@ -5,3 +5,5 @@ bin/*
 include/*
 man/*
 !.gitignore
+__pycache__*
+logfile/*
