@@ -4,7 +4,7 @@ import sys
 import hashlib
 from web3 import Web3
 import json
-
+import logdefinition as logdef
 
 class CreateCheckHash:
 
@@ -14,10 +14,14 @@ class CreateCheckHash:
     def create_check_hash(self, request_type, request_data):
 
         #check_hash = hashlib.sha256(request_type, request_data).hexdigest()
-        check_hash = Web3.soliditySha3(['bytes32', 'bytes32'], [request_type, request_data]).hex()[2:]
+        #check_hash = Web3.soliditySha3(['bytes32', 'bytes32'], [request_type, request_data])
+        check_hash = Web3.toHex(Web3.soliditySha3(['bytes32', 'bytes32'], [request_type, request_data]))
+        #hexed_check_hash = Web3.toHex(check_hash)
 
         if check_hash:
+            logdef.logger.info("success to create check_hash. check_hash is:{}".format(check_hash))
             return check_hash
         else:
             # error
-            return "0000000000000000000000000000000000000000000000000000000000000000"
+            logdef.logger.info("fail to create check_hash.")
+            return "0x0000000000000000000000000000000000000000000000000000000000000000"

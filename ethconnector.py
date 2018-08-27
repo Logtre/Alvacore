@@ -19,7 +19,7 @@ class ETHConnector:
             # @Ropsten testnet
             elif bc_network == 3:
                 #self.w3 = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/aws_testnet/geth.ipc')) # geth
-                self.w3 = Web3(IPCProvider('/Users/user/Library/Application Support/io.parity.ethereum/jsonrpc.ipc')) # parity
+                self.w3 = Web3(IPCProvider(ipc_path='/Users/user/Library/Application Support/io.parity.ethereum/jsonrpc.ipc', timeout=30)) # parity
                 logdef.logger.info("connect to Ropsten testnet")
             # @Rinkeby testnet
             elif bc_network == 4:
@@ -43,22 +43,29 @@ class ETHConnector:
         else:
             self.w3 = ''
         #self.w3 = init.set_IPCProvider(bc_network)
-        self.addr = init.set_address(bc_network)
-        self.abi = init.set_ABI()
-        self.contract = self.w3.eth.contract(address = self.addr,abi = self.abi)
-        #self.create_hash = CreateCheckHash()
-        self.mod_data = ModifyData()
-        self.target_request_id = 0
-        self.target_request = []
-        self.params_hash = ""
-        self.deliver_flag = 0
-        self.request_data = {
-            'request_id':0,
-            'request_type':0,
-            'timestamp':0,
-            'request_state':"",
-            'request_data':""
-        }
+        # set pre-funded account as sender
+        if (self.w3.isConnected()):
+            logdef.logger.info("success to connect network")
+            self.w3.eth.defaultAccount = self.w3.eth.accounts[1]
+            self.addr = init.set_address(bc_network)
+            self.abi = init.set_ABI()
+            self.contract = self.w3.eth.contract(address = self.addr,abi = self.abi)
+            #self.create_hash = CreateCheckHash()
+            self.mod_data = ModifyData()
+            self.target_request_id = 0
+            self.target_request = []
+            self.params_hash = ""
+            self.deliver_flag = 0
+            self.request_data = {
+                'request_id':0,
+                'request_type':0,
+                'timestamp':0,
+                'request_state':"",
+                'request_data':""
+            }
+        else:
+            logdef.logger.info("fail to connect network")
+            return False
 
     def read_request(self):
         create_hash = CreateCheckHash()
@@ -69,20 +76,19 @@ class ETHConnector:
         logdef.logger.info("target requestId is: {}".format(target_request_id))
         # インデックス番号を元に、未取得のFWDリクエストを取得する
         target_request = self.contract.functions.getRequest(target_request_id).call()
-        #logdef.logger.info("target request is: {}".format(target_request))
+        logdef.logger.info("target request is: {}".format(target_request))
 
         if target_request != '':
             # paramsHashを付与
             logdef.logger.info("start calculating paramsHash.")
             self.params_hash = create_hash.create_check_hash(target_request[0], target_request[3])
-            logdef.logger.info("paramsHash is: {}".format(self.params_hash))
+            #logdef.logger.info("paramsHash is: {}".format(self.params_hash))
             # request_dataを更新
             self.request_data['request_id'] = self.mod_data.extract_numtext(str(target_request_id))
-            self.request_data['request_type'] = self.mod_data.extract_text(target_request[0])
+            self.request_data['request_id'] = self.mod_data.extract_text(target_request[0])
             self.request_data['timestamp'] = self.mod_data.extract_numtext(str(target_request[1]))
             self.request_data['request_state'] = self.mod_data.extract_text(target_request[2])
             self.request_data['request_data'] = self.mod_data.extract_text(target_request[3])
-
             logdef.logger.info("extracted request is: {}".format(self.request_data))
             return self.request_data, self.params_hash, 0
         else:
@@ -92,8 +98,14 @@ class ETHConnector:
 
 
     def deliver_response(self, arg):
-
-        self.contract.functions.deliver(arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]).call()
+        if self.w3.personal.unlockAccount(self.w3.eth.defaultAccount, "hogehoge01", 60):
+            logdef.logger.info("success unlockAccount. sender address is:{}".format(self.w3.eth.defaultAccount))
+            transaction = {'from':self.w3.eth.defaultAccount, 'gas':500000}
+            self.contract.functions.deliver(arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]).call(transaction)
+            #self.contract.functions.deliver(arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]).call()
+        else:
+            logdef.logger.info("unsuccess unlockAccount.")
+            return
 
         deliver_flag = self.mod_data.extract_text(self.contract.functions.requestIndexToState(arg["request_id"]).call())
 

@@ -38,7 +38,7 @@ def set_address(bc_network):
         contracts_address = 'set_your_address'
     # @Ropsten testnet
     elif bc_network == 3:
-        contracts_address = '0x849D10cd04e736e9FF176390849792F04781480F'
+        contracts_address = '0xa6D2d643681Fe7737569793cBcF9dD62C869D20b'
     # @Rinkeby testnet
     elif bc_network == 4:
         contracts_address = 'set_your_address'
@@ -55,8 +55,8 @@ def set_IPCProvider(bc_network):
             ipcprovider = Web3(IPCProvider('path/to/ipc'))
         # @Ropsten testnet
         elif bc_network == 3:
-            ipcprovider = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/aws_testnet/geth.ipc'))
-            #ipcprovider = Web3(IPCProvider('/Users/user/Library/Application Support/io.parity.ethereum/jsonrpc.ipc'))
+            #ipcprovider = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/aws_testnet/geth.ipc'))
+            ipcprovider = Web3(IPCProvider('/Users/user/Library/Application Support/io.parity.ethereum/jsonrpc.ipc'))
         # @Rinkeby testnet
         elif bc_network == 4:
             ipcprovider = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/eth_rinkeby_net/geth.ipc'))

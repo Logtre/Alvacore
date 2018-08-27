@@ -11,7 +11,7 @@ from ethconnector import ETHConnector
 #from errorprocessor import ErrorChecker
 #from hashprocessor import CreateCheckHash
 
-import json
+#import json
 import logdefinition as logdef
 
 # APIの雛形(公開)
@@ -55,7 +55,7 @@ def get_forward_fxrate(bc_network):
     #err_check = ErrorChecker()
 
     # ETH node経由でOrderlyコントラクトからrequestを取得
-    logdef.logger.info("strat connecting to BCNetwork for get data.")
+    logdef.logger.info("start connecting to BCNetwork for get data.")
     request_data, params_hash, err_code = eth_con.read_request()
 
     if err_code < 2:
