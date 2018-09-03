@@ -29,7 +29,7 @@ class ModifyData:
         thousandtimes_usd_rate = api_resp['usd_rate'] * 1000
         #dec_api_resp = self.string_to_bytes32(str(hundredfold_usd_rate))
 
-        self.response_data['request_id'] = req['request_id']
+        self.response_data['request_id'] = int(req['request_id'])
         self.response_data['params_hash'] = params_hash
         self.response_data['error'] = err_code
         self.response_data['resp_data'] = int(thousandtimes_usd_rate)

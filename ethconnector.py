@@ -3,6 +3,7 @@
 from web3 import Web3, IPCProvider
 from web3.middleware import geth_poa_middleware
 from hashprocessor import CreateCheckHash
+from web3.contract import ConciseContract
 from moddata import ModifyData
 import init
 import logdefinition as logdef
@@ -73,9 +74,11 @@ class ETHConnector:
         target_request = ''
         # 未取得のFWDリクエストリストの先頭インデックス番号を取得する
         target_request_id = self.contract.functions.getRequestIndex().call()
+        #target_request_id = self.contract.getRequestIndex()
         logdef.logger.info("target requestId is: {}".format(target_request_id))
         # インデックス番号を元に、未取得のFWDリクエストを取得する
         target_request = self.contract.functions.getRequest(target_request_id).call()
+        #target_request = self.contract.getRequest(target_request_id)
         logdef.logger.info("target request is: {}".format(target_request))
 
         if target_request != '':
@@ -85,7 +88,7 @@ class ETHConnector:
             #logdef.logger.info("paramsHash is: {}".format(self.params_hash))
             # request_dataを更新
             self.request_data['request_id'] = self.mod_data.extract_numtext(str(target_request_id))
-            self.request_data['request_id'] = self.mod_data.extract_text(target_request[0])
+            self.request_data['request_type'] = self.mod_data.extract_text(target_request[0])
             self.request_data['timestamp'] = self.mod_data.extract_numtext(str(target_request[1]))
             self.request_data['request_state'] = self.mod_data.extract_text(target_request[2])
             self.request_data['request_data'] = self.mod_data.extract_text(target_request[3])
@@ -98,10 +101,12 @@ class ETHConnector:
 
 
     def deliver_response(self, arg):
-        if self.w3.personal.unlockAccount(self.w3.eth.defaultAccount, "hogehoge01", 60):
+        if self.w3.personal.unlockAccount(self.w3.eth.defaultAccount, "hogehoge01"):
             logdef.logger.info("success unlockAccount. sender address is:{}".format(self.w3.eth.defaultAccount))
-            transaction = {'from':self.w3.eth.defaultAccount, 'gas':500000}
-            self.contract.functions.deliver(arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]).call(transaction)
+            transaction_msg = {'from':self.w3.eth.defaultAccount, 'gas':500000}
+            self.contract.functions.deliver(arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]).transact(transaction_msg)
+            #self.contract.functions.deliver({'_requestId': arg["request_id"], 'paramsHash': arg["params_hash"], '_error': arg["error"], '_respData': arg["resp_data"]})
+            #self.contract.deliver(buildTransaction = (arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]), transact = transaction_msg)
             #self.contract.functions.deliver(arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]).call()
         else:
             logdef.logger.info("unsuccess unlockAccount.")

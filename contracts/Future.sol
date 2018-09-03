@@ -2,7 +2,7 @@ pragma solidity ^0.4.9;
 
 contract AccessControl {
 
-    address internal owner;
+    address public owner;
 
     bool public paused = false;
 
@@ -21,17 +21,17 @@ contract AccessControl {
         _;
     }
 
-    function adminSetOwner(address _newOwner) external onlyOwner() {
+    function setOwner(address _newOwner) external onlyOwner() {
         require(_newOwner != address(0));
 
         owner = _newOwner;
     }
 
-    function adminPause() external onlyOwner() whenNotPaused() {
+    function pause() external onlyOwner() whenNotPaused() {
         paused = true;
     }
 
-    function adminUnpause() public onlyOwner() whenPaused() {
+    function unpause() public onlyOwner() whenPaused() {
         paused = false;
     }
 }
@@ -40,19 +40,19 @@ contract Base is AccessControl {
 
     event Upgrade(address newAddr);
 
-    int internal minGas = 300000;
-    int internal gasPrice = 5 * 10**10;
-    int internal cancellationGas = 250000; // charged when the requester cancels a request that is not responded
-    int internal externalGas = 50000;
+    int public minGas = 300000;
+    int public gasPrice = 5 * 10**10;
+    int public cancellationGas = 250000; // charged when the requester cancels a request that is not responded
+    int public externalGas = 50000;
 
-    int internal constant CANCELLED_FEE_FLAG = 1;
-    int internal constant DELIVERED_FEE_FLAG = 0;
-    int internal constant FAIL_FLAG = -2 ** 250;
-    int internal constant SUCCESS_FLAG = 1;
+    int public constant CANCELLED_FEE_FLAG = 1;
+    int public constant DELIVERED_FEE_FLAG = 0;
+    int public constant FAIL_FLAG = -2 ** 250;
+    int public constant SUCCESS_FLAG = 1;
 
     bool public killswitch;
     bool public cancelFlag;
-    int internal unrespondedCnt;
+    int public unrespondedCnt;
     int public newVersion;
 
     modifier onlyOwner() {
@@ -176,8 +176,8 @@ contract Base is AccessControl {
     }
 }
 
-contract FwdCharacteristic {
-    bytes32 public constant KEYWORD = "FWD";
+contract FutCharacteristic {
+    bytes32 public constant KEYWORD = "FUT";
 }
 
 contract Orderly is Base {
@@ -204,8 +204,8 @@ contract Orderly is Base {
         bytes32("error:ALVCServer")
     ];
 
-    address public alvcAddress = 0xD7E2b2857fA34F08Db2262Fb684A3782BC750e70; // address of the ALVC ADDRESS @TestNet
-    address public alvcWallet = 0x0115b95cdF80C0463c60190efC965Ba857F2F8B7; // address of the ALVC WALLET @TestNet
+    address public ALVC_ADDRESS = 0xD7E2b2857fA34F08Db2262Fb684A3782BC750e70; // address of the ALVC ADDRESS @TestNet
+    address public ALVC_WALLET = 0x0115b95cdF80C0463c60190efC965Ba857F2F8B7; // address of the ALVC WALLET @TestNet
 
     //bytes32 public constant KEYWORD = "FWD";
 
@@ -257,7 +257,7 @@ contract Orderly is Base {
     }
 
     function _setAlvcWallet(address _newAlvcWallet) internal {
-        alvcWallet = _newAlvcWallet;
+        ALVC_WALLET = _newAlvcWallet;
     }
 
     function getRequestIndex() public view returns(int) {
@@ -308,11 +308,11 @@ contract Orderly is Base {
     }
 
     function _isALVC(address _from) view internal {
-        require (_from == alvcWallet);
+        require (_from == ALVC_WALLET);
     }
 }
 
-contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
+contract FutOrderlyRequest is Orderly, FutCharacteristic {
 
     event RequestInfo(int requestId, bytes4 requestType, address requester, int fee, bytes32 paramsHash, int timestamp, bytes32 _requestState, bytes32 requestData); // log of requests, the Town Crier server watches this event and processes requests
     event DeliverInfo(int requestId, int fee, int gasPrice, int gasLeft, int callbackGas, bytes32 paramsHash, int error, int respData); // log of responses
@@ -383,7 +383,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
         int _requestId,
         int _value
         ) public  whenNotPaused() available() {
-        // primise: this function is called by FwdCont
+        // primise: this function is called by FutCont
         // only requester can execute
         _isRequester(_requestId);
 
@@ -405,7 +405,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
             // If the request is cancelled by the requester, cancellation
             // fee goes to the SGX account and set the request as having
             // been responded to.
-            _transfer(alvcAddress, cancellationGas * gasPrice);
+            _transfer(ALVC_ADDRESS, cancellationGas * gasPrice);
             // canceled
             _setRequestState(_requestId, 2);
             return;
@@ -414,7 +414,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
         if (_error < 2) {
             // Either no error occurs, or the requester sent an invalid query.
             // Send the fee to the SGX account for its delivering.
-            _transfer(alvcAddress, requests[_requestId].fee);
+            _transfer(ALVC_ADDRESS, requests[_requestId].fee);
         } else {
             // Error in TC, refund the requester.
             _transfer(requests[_requestId].requester, requests[_requestId].fee);
@@ -438,7 +438,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
 
         _setRequestState(_requestId, 1);
 
-        _deleteRequest(_requestId, alvcAddress, minGas * gasPrice * 80 / 100);
+        _deleteRequest(_requestId, ALVC_ADDRESS, minGas * gasPrice * 80 / 100);
     }
 
     function setAllCancel(bool _flag) onlyOwner() public {
@@ -472,19 +472,20 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
 
 
 
-contract FwdCont is Base {
+contract FutCont is Base {
 
-    event FwdRequestInfo(address fwdOwner, int contractDay, int settlementDuration, int expireDuration, address receiverAddr, address senderAddr, int baseAmt);
-    event FwdCancel(int fwdId, address canceller, int flag);
-    event FwdDelete(int fwdId);
-    event SetFwdState(int fwdId, bytes32 fwdState);
-    event SetFwdFee(int storedFwdFee);
-    event SetFxRate(int fwdId, int fxRate);
-    event WithdrawDeposit(int fwdId, address withdrawer, int amount);
-    event OutOfDeposit(int fwdId, address sender, int Additional_certificate);
+    event FutRequestInfo(address futOwner, int contractDay, int settlementDuration, int expireDuration, address receiverAddr, address senderAddr, int baseAmt);
+    event FutCancel(int futId, address canceller, int flag);
+    event FutDelete(int futId);
+    event SetFutState(int futId, bytes32 futState);
+    event SetMarginState(int futId, bytes32 marginState);
+    event SetFutFee(int storedFutFee);
+    event SetFxRate(int futId, int fxRate);
+    event WithdrawDeposit(int futId, address withdrawer, int amount);
+    event OutOfDeposit(int futId, address sender, int Additional_certificate);
 
-    struct FwdRequest { // the data struct for forward contract
-        address fwdOwner;
+    struct FutRequest { // the data struct for forward contract
+        address futOwner;
         int contractDay; // the date when conclude the trade contract
         int settlementDuration; // the date when money will be moved
         int expireDuration; // the date when contract will expire
@@ -493,7 +494,21 @@ contract FwdCont is Base {
         int baseAmt; // the amount of money calculated on a USD base
     }
 
-    bytes32[] internal fwdStates = [
+    bytes32[] public marginFlags = [
+        bytes32("beginner"), // marginRate: 100%
+        bytes32("standard"), // marginRate: 50%
+        bytes32("advanced"), // marginRate: 30%
+        bytes32("expert") // marginRate: 3%
+    ];
+
+    int[] public marginRates = [
+        100, // beginner
+        50, // standard
+        30, // advanced
+        3 // expert
+    ];
+
+    bytes32[] public futStates = [
         bytes32("requesting"),
         bytes32("getFxRate"),
         bytes32("setDeposit"),
@@ -503,47 +518,60 @@ contract FwdCont is Base {
         bytes32("canceled"),
         bytes32("confirmEmergency"),
         bytes32("emergencyCanceled"),
-        bytes32("error:FwdOrderly"),
+        bytes32("error:FutOrderly"),
         bytes32("error:wrongData"),
         bytes32("error:ALVCServer")
     ];
 
-    FwdOrderlyRequest internal requestOrderly;
+    bytes32[] public marginStates = [
+        bytes32("no_deposit"),
+        bytes32("need_to_confirm_depositAmt"),
+        bytes32("insufficient_deposit"),
+        bytes32("sufficient_deposit"),
+        bytes32("canceled")
+    ];
 
-    int internal reqGas = 250000;
+    FutOrderlyRequest public requestOrderly;
 
-    bytes4 constant internal FWD_CALLBACK_FID = bytes4(keccak256("response(int256,int256,int256)"));
-    bytes4 constant internal REQUESTTYPE = "FWD";
-    bytes32 constant internal SYMBOL = "ETH";
+    int public reqGas = 250000;
 
-    int internal fwdCnt;
+    bytes4 constant public FUT_CALLBACK_FID = bytes4(keccak256("response(int256,int256,int256)"));
+    bytes4 constant public REQUESTTYPE = "FUT";
+    bytes32 constant public SYMBOL = "ETH";
+
+    int public futCnt;
     bool public setOrderly;
 
-    mapping (int => FwdRequest) internal fwdRequests; // the mapping to link fwdId and FwdCont (key:fwdID)
-    mapping (int => int) internal fwdIndexToRequests; // the mapping to link requestId and fwdId (key:requestId)
-    mapping (int => int) internal requestIndexToFees; // the mapping to link requestId and fee (key:requestId)
-    mapping (int => int) internal fwdIndexToFees; // the mapping to link fwdId and fee (key:fwdID)
-    mapping (int => bytes32) internal fwdIndexToFwdState; // the mapping to link fwdId and fwdState (key:fwdID)
-    mapping (int => int) internal fwdIndexToFxRate; // the mapping to link fwdId and fxRate (key:fwdID)
-    mapping (int => int) internal fwdDeposits; // the mapping to link fwdId and depositAmt (key:fwdID)
+    mapping (int => FutRequest) public futRequests; // the mapping to link futId and FutCont (key:futID)
+    mapping (int => int) public futIndexToRequests; // the mapping to link requestId and futId (key:requestId)
+    mapping (int => int) public requestIndexToFees; // the mapping to link requestId and fee (key:requestId)
+    mapping (int => int) public futIndexToFees; // the mapping to link futId and fee (key:futID)
+    mapping (int => bytes32) public futIndexToFutState; // the mapping to link futId and futState (key:futID)
+    mapping (int => bytes32) public futIndexToMarginState;
+    mapping (int => int) public futIndexToFxRate1; // the mapping to link futId and fxRate (key:futID)
+    mapping (int => int) public futIndexToFxRate2;
+    mapping (int => int) public futDeposits; // the mapping to link futId and depositAmt (key:futID)
+    mapping (int => int) public futIndexToMarginRate;
+    mapping (int => bytes32) public futIndexToMarginFlag;
 
-    mapping (int => bool) internal cancelRequestSender;
-    mapping (int => bool) internal cancelRequestReceiver;
+    mapping (int => bool) public cancelRequestSender;
+    mapping (int => bool) public cancelRequestReceiver;
+
 
     modifier orderlyConnected() {
         require(setOrderly && address(requestOrderly) != 0x0000000000000000000000000000000000000000);
         _;
     }
 
-    modifier onlyParty(int _fwdId) {
-        require(msg.sender == fwdRequests[_fwdId].fwdOwner ||
-            msg.sender == fwdRequests[_fwdId].receiverAddr ||
-            msg.sender == fwdRequests[_fwdId].senderAddr);
+    modifier onlyParty(int _futId) {
+        require(msg.sender == futRequests[_futId].futOwner ||
+            msg.sender == futRequests[_futId].receiverAddr ||
+            msg.sender == futRequests[_futId].senderAddr);
             _;
     }
 
     constructor() public { // constractor
-        _createFwdRequest(
+        _createFutRequest(
             msg.sender,
             int(now),
             0,
@@ -555,38 +583,46 @@ contract FwdCont is Base {
             0,
             0
             );
-        //fwdCnt = 1;
-        //fwdRequests[0].fwdOwner = msg.sender;
+        //futCnt = 1;
+        //futRequests[0].futOwner = msg.sender;
         owner = msg.sender;
         setOrderly = false;
     }
 
-    function _addFwdRequest(int _fwdId, FwdRequest _fwdRequest, int _requestId, int _reqFee) private {
-        fwdRequests[_fwdId] = _fwdRequest;
-        fwdIndexToRequests[_fwdId] = _requestId;
-        fwdIndexToFees[_fwdId] = int(msg.value) - _reqFee;
-        fwdIndexToFwdState[_fwdId] = fwdStates[0];
-        fwdIndexToFxRate[_fwdId] = 0;
-        fwdDeposits[_fwdId] = 0;
-        cancelRequestSender[_fwdId] = false;
-        cancelRequestReceiver[_fwdId] = false;
-        fwdCnt ++;
+    function _setMarginRate(int _futId, int _index) internal {
+        futIndexToMarginFlag[_futId] = marginFlags[uint(_index)];
+        futIndexToMarginRate[_futId] = marginRates[uint(_index)];
     }
 
-    function _createFwdRequest(
-        address _fwdOwner,
+    function _addFutRequest(int _futId, FutRequest _futRequest, int _requestId, int _reqFee) private {
+        futRequests[_futId] = _futRequest;
+        futIndexToRequests[_futId] = _requestId;
+        futIndexToFees[_futId] = int(msg.value) - _reqFee;
+        futIndexToFutState[_futId] = futStates[0];
+        futIndexToMarginState[_futId] = marginStates[0];
+        futIndexToFxRate1[_futId] = 0;
+        futIndexToFxRate2[_futId] = 0;
+        futDeposits[_futId] = 0;
+        _setMarginRate(_futId, 0);
+        cancelRequestSender[_futId] = false;
+        cancelRequestReceiver[_futId] = false;
+        futCnt ++;
+    }
+
+    function _createFutRequest(
+        address _futOwner,
         int _contractDay,
         int _settlementDuration,
         int _expireDuration,
         address _receiverAddr,
         address _senderAddr,
         int _baseAmt,
-        int _fwdCnt,
+        int _futCnt,
         int _requestId,
         int _reqFee
         ) internal returns(int) {
-        FwdRequest memory fwdRequest = FwdRequest({
-            fwdOwner: _fwdOwner,
+        FutRequest memory futRequest = FutRequest({
+            futOwner: _futOwner,
             contractDay: _contractDay, // the date when conclude the trade contract
             settlementDuration: _settlementDuration, // the date when money will be moved
             expireDuration: _expireDuration, // the date when contract will expire
@@ -595,100 +631,103 @@ contract FwdCont is Base {
             baseAmt: _baseAmt // the amount of money calculated on a USD base
         });
 
-        _addFwdRequest(_fwdCnt, fwdRequest, _requestId, _reqFee);
+        _addFutRequest(_futCnt, futRequest, _requestId, _reqFee);
 
-        emit FwdRequestInfo(_fwdOwner, _contractDay, _settlementDuration, _expireDuration, _receiverAddr, _senderAddr, _baseAmt);
-        emit SetFwdFee(fwdIndexToFees[_fwdCnt]);
+        emit FutRequestInfo(_futOwner, _contractDay, _settlementDuration, _expireDuration, _receiverAddr, _senderAddr, _baseAmt);
+        emit SetFutFee(futIndexToFees[_futCnt]);
 
-        return _fwdCnt;
+        return _futCnt;
     }
 
     function _setReqFee(int _reqGas) internal {
         reqGas = _reqGas;
     }
 
-    function adminSetOrderly(address _requestOrderly) onlyOwner() public {
-        requestOrderly = FwdOrderlyRequest(_requestOrderly);
+    function setOrderly(address _requestOrderly) onlyOwner() public {
+        requestOrderly = FutOrderlyRequest(_requestOrderly);
 
         setOrderly = true;
     }
 
-    function _cancel(int _fwdId) internal {
-        // delete fwdRequest
-        _deleteFwdRequest(_fwdId);
+    function _cancel(int _futId) internal {
+        // delete futRequest
+        _deleteFutRequest(_futId);
     }
 
-    function _deleteRequest(int _fwdId) internal {
-        requestOrderly.requestCancel(fwdIndexToRequests[_fwdId], minGas * gasPrice * 80 / 100);
+    function _deleteRequest(int _futId) internal {
+        requestOrderly.requestCancel(futIndexToRequests[_futId], minGas * gasPrice * 80 / 100);
     }
 
-    function _deleteFwdRequest(int _fwdId) internal {
+    function _deleteFutRequest(int _futId) internal {
         // premise: withdrawing deposit asset is done
         // check wether deposit is refunded
-        _noDeposit(_fwdId);
-        // escape fwdRequest to another struct
-        int _payedFeeAmt = fwdIndexToFees[_fwdId];
-        // escape fwdOwner to another struct
-        address _fwdOwner = fwdRequests[_fwdId].fwdOwner;
-        // delete mappings about fwd
-        delete fwdRequests[_fwdId];
-        delete fwdIndexToRequests[_fwdId];
-        delete fwdIndexToFees[_fwdId];
-        delete fwdIndexToFwdState[_fwdId];
-        delete fwdIndexToFxRate[_fwdId];
-        delete cancelRequestSender[_fwdId];
-        delete cancelRequestReceiver[_fwdId];
-        //delete fwdDeposits[_fwdId];
-        // refund fee to fwdOwner
-        _transfer(_fwdOwner, minGas * gasPrice);
-        // refund surplus value to FwdCont's owner
+        _noDeposit(_futId);
+        // escape futRequest to another struct
+        int _payedFeeAmt = futIndexToFees[_futId];
+        // escape futOwner to another struct
+        address _futOwner = futRequests[_futId].futOwner;
+        // delete mappings about fut
+        delete futRequests[_futId];
+        delete futIndexToRequests[_futId];
+        delete futIndexToFees[_futId];
+        delete futIndexToFutState[_futId];
+        delete futIndexToFxRate1[_futId];
+        delete futIndexToFxRate2[_futId];
+        delete marginFlags[uint(_futId)];
+        delete marginRates[uint(_futId)];
+        delete cancelRequestSender[_futId];
+        delete cancelRequestReceiver[_futId];
+        //delete futDeposits[_futId];
+        // refund fee to futOwner
+        _transfer(_futOwner, minGas * gasPrice);
+        // refund surplus value to FutCont's owner
         if (_payedFeeAmt - minGas * gasPrice > 0) {
             _transfer(owner, _payedFeeAmt - minGas * gasPrice);
         }
         // emit event
-        emit FwdDelete(_fwdId);
+        emit FutDelete(_futId);
     }
 
-    function _noDeposit(int _fwdId) view internal {
-        require (fwdDeposits[_fwdId] == 0);
+    function _noDeposit(int _futId) view internal {
+        require (futDeposits[_futId] == 0);
     }
 
-    function _refundPayedDeposit(int _fwdId) internal {
+    function _refundPayedDeposit(int _futId) internal {
         // escape deposit to another struct
-        int targetDeposit = fwdDeposits[_fwdId];
+        int targetDeposit = futDeposits[_futId];
         // delete deposit
-        delete fwdDeposits[_fwdId];
+        delete futDeposits[_futId];
         // refund value to sender
-        _transfer(fwdRequests[_fwdId].senderAddr, targetDeposit);
-        // minus refund fee from fwdIndexToFees
-        _setFwdFee(_fwdId, fwdIndexToFees[_fwdId] - minGas * gasPrice);
+        _transfer(futRequests[_futId].senderAddr, targetDeposit);
+        // minus refund fee from futIndexToFees
+        _setFutFee(_futId, futIndexToFees[_futId] - minGas * gasPrice);
         // emit event
-        emit WithdrawDeposit(_fwdId, fwdRequests[_fwdId].senderAddr, targetDeposit);
+        emit WithdrawDeposit(_futId, futRequests[_futId].senderAddr, targetDeposit);
     }
 
-    function _withdrawDepositWithRate(int _fwdId, address _to, int _fxRate) internal {
+    function _withdrawDepositWithRate(int _futId, address _to, int _fxRate) internal {
         // calculate payment amount
-        int _paymentAmt = _calculateFxAmt(fwdRequests[_fwdId].baseAmt, _fxRate);
-        int tempDeposit = fwdDeposits[_fwdId];
+        int _paymentAmt = _calculateFxAmt(futRequests[_futId].baseAmt, _fxRate);
+        int tempDeposit = futDeposits[_futId];
 
         if (tempDeposit > _paymentAmt) {
             // sufficient deposit exist
             // refund exchanged deposit
             _transfer(_to, _paymentAmt);
             // refund surplus deposit
-            _transfer(fwdRequests[_fwdId].senderAddr, fwdDeposits[_fwdId] - _paymentAmt - minGas * gasPrice);
+            _transfer(futRequests[_futId].senderAddr, futDeposits[_futId] - _paymentAmt - minGas * gasPrice);
             // delete deposit
-            delete fwdDeposits[_fwdId];
+            delete futDeposits[_futId];
             // emit event
-            emit WithdrawDeposit(_fwdId, _to, _paymentAmt);
+            emit WithdrawDeposit(_futId, _to, _paymentAmt);
         } else {
             // insufficient deposit exist
             // refund all deposit amount
-            _transfer(_to, fwdDeposits[_fwdId] - minGas * gasPrice);
+            _transfer(_to, futDeposits[_futId] - minGas * gasPrice);
             // update deposit amount
-            fwdDeposits[_fwdId] = 0;
+            futDeposits[_futId] = 0;
             // emit event
-            emit OutOfDeposit(_fwdId, fwdRequests[_fwdId].senderAddr, _paymentAmt - tempDeposit);
+            emit OutOfDeposit(_futId, futRequests[_futId].senderAddr, _paymentAmt - tempDeposit);
         }
     }
 
@@ -696,78 +735,114 @@ contract FwdCont is Base {
         // fxRate is [ETH/USD].
         // to calculate payment ether, devide baseAmt by fxRate.
         // fxrate is 1000times, so amaount provide 1000
-        // exchangedAmt's unit is finney (=1/1000 ether)
+        // unit is finney (=1/1000 ether)
         int unit = 1000 finney;
         int exchangedAmt = _baseAmt  * 1000 * unit / _fxRate;
         return exchangedAmt;
     }
 
-    function _calculateFxAmtFromId(int _fwdId) view internal returns(int) {
+    function _calculateMarginAmt(int _baseAmt, int _fxRate, int _marginRate) pure internal returns(int) {
+        // Margin rate is percentage
+        // uint finney
+        int marginAmt = _calculateFxAmt(_baseAmt, _fxRate) * _marginRate / 100;
+        return marginAmt;
+    }
+
+    function _calculateFxAmtFromId(int _futId, int _index) view internal returns(int) {
         // fxRate is [ETH/USD].
         // to calculate payment ether, devide baseAmt by fxRate.
         // fxrate is 1000times, so amaount provide 1000
         // unit is finney (=1/1000 ether)
         int unit = 1000 finney;
-        return fwdRequests[_fwdId].baseAmt * 1000 * unit / fwdIndexToFxRate[_fwdId];
+        if (_index == 1) {
+            return futRequests[_futId].baseAmt * 1000 * unit / futIndexToFxRate1[_futId];
+        } else if (_index == 2) {
+            return futRequests[_futId].baseAmt * 1000 * unit / futIndexToFxRate2[_futId];
+        } else {
+            revert();
+        }
+    }
+
+    function _getRestDepositAmt(int _futId, int _index) view internal returns(int) {
+            // depositAmt must be payed
+            require(futDeposits[_futId] > 0);
+            // uint is finney
+            int restDepositAmt = (_calculateFxAmtFromId(_futId, _index) - futDeposits[_futId]);
+
+            if (restDepositAmt < 0) {
+                restDepositAmt = 0;
+            }
+
+            return restDepositAmt;
     }
 
     function _calculateTotalFee(int _minGas, int _reqGas, int _gasPrice, int _buffer) view internal returns(int) {
-        int fwdFetchRateFee = _minGas * _gasPrice;
-        int fwdDepositFee = _minGas * _gasPrice;
-        int fwdConfirmFee = _minGas * _gasPrice;
-        int fwdWithdrawFee = _minGas * _gasPrice;
-        int fwdCancellationFee = _reqGas * gasPrice;
-        int totalFee = (fwdFetchRateFee + fwdDepositFee + fwdConfirmFee + fwdWithdrawFee + fwdCancellationFee) * _buffer / 100;
+        int futFetchRateFee = _minGas * _gasPrice;
+        int futDepositFee = _minGas * _gasPrice;
+        int futConfirmFee = _minGas * _gasPrice;
+        int futWithdrawFee = _minGas * _gasPrice;
+        int futCancellationFee = _reqGas * gasPrice;
+        int totalFee = (futFetchRateFee + futDepositFee + futConfirmFee + futWithdrawFee + futCancellationFee) * _buffer / 100;
 
         return totalFee;
     }
 
-    function _setFwdState(int _fwdId, int _index) internal {
-        fwdIndexToFwdState[_fwdId] = fwdStates[uint(_index)];
-
-        emit SetFwdState(_fwdId, fwdStates[uint(_index)]);
+    function _setFutState(int _futId, int _index) internal {
+        futIndexToFutState[_futId] = futStates[uint(_index)];
+        emit SetFutState(_futId, futStates[uint(_index)]);
     }
 
-    function _setFxRate(int _fwdId, int _fxRate) internal {
-        fwdIndexToFxRate[_fwdId] = _fxRate;
-
-        emit SetFxRate(_fwdId, _fxRate);
+    function _setMarginState(int _futId, int _index) internal {
+        futIndexToMarginState[_futId] = marginStates[uint(_index)];
+        emit SetMarginState(_futId, marginStates[uint(_index)]);
     }
 
-    function _setFwdFee(int _fwdId, int _fee) internal {
-        fwdIndexToFees[_fwdId] = _fee;
+    function _setFxRate(int _futId, int _fxRate, int _index) internal {
+        if (_index == 1) {
+            futIndexToFxRate1[_futId] = _fxRate;
+        } else if (_index == 2) {
+            futIndexToFxRate2[_futId] = _fxRate;
+        } else {
+            revert();
+        }
+
+        emit SetFxRate(_futId, _fxRate);
+    }
+
+    function _setFutFee(int _futId, int _fee) internal {
+        futIndexToFees[_futId] = _fee;
     }
 
     function _isOrderly(address _from) view internal {
         require(_from == address(requestOrderly));
     }
 
-    function _isSender(int _fwdId) view internal {
-        require(msg.sender == fwdRequests[_fwdId].senderAddr);
+    function _isSender(int _futId) view internal {
+        require(msg.sender == futRequests[_futId].senderAddr);
     }
 
-    function _isReceiver(int _fwdId) view internal {
-        require(msg.sender == fwdRequests[_fwdId].receiverAddr);
+    function _isReceiver(int _futId) view internal {
+        require(msg.sender == futRequests[_futId].receiverAddr);
     }
 
-    function _availSettlement(int _fwdId) view internal {
-        require(int(now) >= fwdRequests[_fwdId].contractDay + fwdRequests[_fwdId].settlementDuration * 1 days);
+    function _availSettlement(int _futId) view internal {
+        require(int(now) >= futRequests[_futId].contractDay + futRequests[_futId].settlementDuration * 1 days);
     }
 
-    function _isExpired(int _fwdId) view internal {
-        require(int(now) >= fwdRequests[_fwdId].contractDay + fwdRequests[_fwdId].expireDuration * 1 days);
+    function _isExpired(int _futId) view internal {
+        require(int(now) >= futRequests[_futId].contractDay + futRequests[_futId].expireDuration * 1 days);
     }
 
-    function _checkState(int _fwdId, int _index) view internal {
-        require(fwdIndexToFwdState[_fwdId] == fwdStates[uint(_index)]);
+    function _checkState(int _futId, int _index) view internal {
+        require(futIndexToFutState[_futId] == futStates[uint(_index)]);
     }
 }
 
-contract FwdContRequest is FwdCont {
+contract FutContRequest is FutCont {
 
-    event ForwardInfo(int fwdId,
-        address fwdOwner,
-        bytes32 fwdState,
+    event FutureInfo(int futId,
+        address futOwner,
+        bytes32 futState,
         int contractDay,
         int settlementDuration,
         int expireDuration,
@@ -791,7 +866,7 @@ contract FwdContRequest is FwdCont {
         int data
     ); // log for responses
 
-    //FwdOrderlyRequest public requestOrderly;
+    //FutOrderlyRequest public requestOrderly;
 
     int buffer = 120;
 
@@ -804,7 +879,7 @@ contract FwdContRequest is FwdCont {
         int _baseAmt
         ) internal {
 
-        //int _fwdCnt = fwdCnt;
+        //int _futCnt = futCnt;
         int _reqFee = minGas * gasPrice * buffer / 100;
         int _requiredFee = _calculateTotalFee(minGas, reqGas, gasPrice, buffer);
 
@@ -816,12 +891,12 @@ contract FwdContRequest is FwdCont {
             int _requestId = requestOrderly.request.value(uint(_reqFee))(
                 REQUESTTYPE,
                 address(this),
-                FWD_CALLBACK_FID,
+                FUT_CALLBACK_FID,
                 int(now),
                 SYMBOL
             );
 
-            int _fwdId = _createFwdRequest(
+            int _futId = _createFutRequest(
                 msg.sender,
                 int(now),
                 _settlementDuration,
@@ -829,16 +904,16 @@ contract FwdContRequest is FwdCont {
                 _receiverAddr,
                 _senderAddr,
                 _baseAmt,
-                fwdCnt,
+                futCnt,
                 _requestId,
                 _reqFee
             );
         }
 
-        emit ForwardInfo(
-            _fwdId,
+        emit FutureInfo(
+            _futId,
             tx.origin,
-            fwdStates[0],
+            futStates[0],
             int(now),
             _settlementDuration,
             _expireDuration,
@@ -859,53 +934,62 @@ contract FwdContRequest is FwdCont {
 
         _isOrderly(msg.sender);
 
-        int _fwdFetchRateFee = minGas * gasPrice;
+        int _futFetchRateFee = minGas * gasPrice;
 
-        int _fwdId = fwdIndexToRequests[_requestId]; // Linkage requestId and FwdCont
+        int _futId = futIndexToRequests[_requestId]; // Linkage requestId and FutCont
 
         if (_error < 2) {
-            // update fxRate
-            _setFxRate(_fwdId, _respData);
-            // update fwdState
-            _setFwdState(_fwdId, 1);
-            // payment
-            _transfer(owner, fwdIndexToFees[_fwdId]);
+            if (futStates[uint(_futId)] == futStates[0]) {
+                // update fxRate
+                _setFxRate(_futId, _respData, 1);
+                // update futState
+                _setFutState(_futId, 1);
+                // payment
+                _transfer(owner, futIndexToFees[_futId]);
+            } else {
+                _setFxRate(_futId, _respData, 2);
+            }
             // emit event
             emit Response(int(_requestId), owner, _error, _respData);
         } else {
             // error in ALVC server
             // return fee
-            _transfer(fwdRequests[_fwdId].fwdOwner, fwdIndexToFees[_fwdId] - _fwdFetchRateFee);
+            _transfer(futRequests[_futId].futOwner, futIndexToFees[_futId] - _futFetchRateFee);
             // emit event
-            emit Response(int(_requestId), fwdRequests[_fwdId].fwdOwner, _error, 0);
+            emit Response(int(_requestId), futRequests[_futId].futOwner, _error, 0);
         }
     }
 }
 
-contract FwdContProcess is FwdCont {
 
-    function _cancelFwd(int64 _fwdId) internal {
-        // fwdState = confirmCancel
-        _checkState(_fwdId, 5);
+contract FutContProcess is FutCont {
 
-        if (int(msg.value) + fwdIndexToFees[_fwdId] >= minGas * gasPrice) {
+    function _cancelFut(int64 _futId) internal {
+        // futState = confirmCancel
+        _checkState(_futId, 5);
+
+        if (int(msg.value) + futIndexToFees[_futId] >= minGas * gasPrice) {
             // If the request was sent by this user and has money left on it,
             // then cancel it.
-            if (fwdDeposits[_fwdId] > 0) {
+            if (futDeposits[_futId] > 0) {
                 // exist deposit asset
                 // withdraw deposit
-                _refundPayedDeposit(_fwdId);
-                // cancel fwd
-                //_cancel(_fwdId, fwdRequests[_fwdId].receiverAddr, minGas * gasPrice);
-                _cancel(_fwdId);
-                // update fwdState
-                _setFwdState(_fwdId, 6);
+                _refundPayedDeposit(_futId);
+                // cancel fut
+                //_cancel(_futId, futRequests[_futId].receiverAddr, minGas * gasPrice);
+                _cancel(_futId);
+                // update futState
+                _setFutState(_futId, 6);
+                // update marginState
+                _setMarginState(_futId, 4);
             } else {
                 // no deposit, so need not to return deposit
-                //_cancel(_fwdId, fwdRequests[_fwdId].receiverAddr, minGas * gasPrice);
-                _cancel(_fwdId);
-                // update fwdState
-                _setFwdState(_fwdId, 6);
+                //_cancel(_futId, futRequests[_futId].receiverAddr, minGas * gasPrice);
+                _cancel(_futId);
+                // update futState
+                _setFutState(_futId, 6);
+                // update marginState
+                _setMarginState(_futId, 4);
             }
         } else {
             // unsufficient fee
@@ -913,196 +997,187 @@ contract FwdContProcess is FwdCont {
         }
     }
 
-    function _emergencyCancel(int64 _fwdId) internal {
-        // fwdState = confirmEmergency
-        _checkState(_fwdId, 7);
+    function _emergencyCancel(int64 _futId) internal {
+        // futState = confirmEmergency
+        _checkState(_futId, 7);
 
-        if (int(msg.value) + fwdIndexToFees[_fwdId] >= minGas * gasPrice) {
+        if (int(msg.value) + futIndexToFees[_futId] >= minGas * gasPrice) {
             // If the request was sent by this user and has money left on it,
             // then cancel it.
-            if(fwdDeposits[_fwdId] > 0) {
+            if(futDeposits[_futId] > 0) {
                 // exist deposit asset
                 // withdraw deposit
-                _refundPayedDeposit(_fwdId);
+                _refundPayedDeposit(_futId);
                 // confirmCancel
-                _setFwdState(_fwdId, 8);
-                // cancel fwd
-                //_cancel(_fwdId, fwdRequests[_fwdId].receiverAddr, minGas * gasPrice);
-                _cancel(_fwdId);
+                _setFutState(_futId, 8);
+                // update marginState
+                _setMarginState(_futId, 4);
+                // cancel fut
+                //_cancel(_futId, futRequests[_futId].receiverAddr, minGas * gasPrice);
+                _cancel(_futId);
             } else {
                 // confirmCancel
-                _setFwdState(_fwdId, 8);
+                _setFutState(_futId, 8);
+                // update marginState
+                _setMarginState(_futId, 4);
                 // no deposit, so need not to return deposit
-                //_cancel(_fwdId, fwdRequests[_fwdId].receiverAddr, minGas * gasPrice);
-                _cancel(_fwdId);
+                //_cancel(_futId, futRequests[_futId].receiverAddr, minGas * gasPrice);
+                _cancel(_futId);
             }
         } else {
             revert();
         }
     }
 
-    function _withdrawFwd(int _fwdId) internal {
-        // if now time greater than settlementDay,
+    function _withdrawFut(int _futId) internal {
+        // if now time greater than settlementDuration,
         // function can execute
-        _availSettlement(_fwdId);
+        _availSettlement(_futId);
         // only receiver can execute
-        _isReceiver(_fwdId);
-        // fwdState = confirmWithdraw
-        _checkState(_fwdId, 3);
+        _isReceiver(_futId);
+        // futState = confirmWithdraw
+        _checkState(_futId, 3);
 
-        if (fwdDeposits[_fwdId] > 0) {
+        if (futDeposits[_futId] > 0) {
             // exist deposit asset
             // withdraw deposit
-            _withdrawDepositWithRate(_fwdId, fwdRequests[_fwdId].senderAddr, fwdIndexToFxRate[_fwdId]);
-            // update fwdState
-            _setFwdState(_fwdId, 4);
+            _withdrawDepositWithRate(_futId, futRequests[_futId].senderAddr, futIndexToFxRate2[_futId]);
+            // update futState
+            _setFutState(_futId, 4);
 
-            _deleteFwdRequest(_fwdId);
+            _deleteFutRequest(_futId);
         } else {
             revert();
         }
     }
 
-    function _deposit(int _fwdId) internal {
+    function _additionalDeposit(int _futId) internal {
 
-        _isSender(_fwdId);
+        _isSender(_futId);
 
-        if (int(msg.value) < _calculateFxAmt(fwdRequests[_fwdId].baseAmt, fwdIndexToFxRate[_fwdId])) {
+        if (int(msg.value) < _getRestDepositAmt(_futId, 2) ) {
             // insufficient fee
             // revert
             revert();
         } else {
             // create deposit
-            fwdDeposits[_fwdId] = int(msg.value);
-            // update fwdState
-            _setFwdState(_fwdId, 2);
+            futDeposits[_futId] += int(msg.value);
+            // update futState
+            _setFutState(_futId, 3);
+            // update marginState
+            _setMarginState(_futId, 3);
             // update fee
-            _setFwdFee(_fwdId, fwdIndexToFees[_fwdId] - minGas * gasPrice);
+            _setFutFee(_futId, futIndexToFees[_futId] - minGas * gasPrice);
         }
     }
 
-    function _withdrawConfirm(int _fwdId) internal {
+    function _deposit(int _futId) internal {
         // only sender can execute
-        _isSender(_fwdId);
-        // fwdState = setDeposit
-        _checkState(_fwdId, 2);
+        _isSender(_futId);
+        // unit finney
+        if (int(msg.value) < _calculateMarginAmt(futRequests[_futId].baseAmt, futIndexToFxRate1[_futId], marginRates[uint(_futId)])) {
+            // insufficient fee
+            // revert
+            revert();
+        } else {
+            // create deposit
+            // unit
+            futDeposits[_futId] = int(msg.value);
+            // update futState
+            _setFutState(_futId, 2);
+            // update marginState
+            _setMarginState(_futId, 1);
+            // update fee
+            _setFutFee(_futId, futIndexToFees[_futId] - minGas * gasPrice);
+        }
+    }
 
-        if (int(msg.value) + fwdIndexToFees[_fwdId] > minGas * gasPrice) {
+    function _withdrawConfirm(int _futId) internal {
+        // only sender can execute
+        _isSender(_futId);
+        // futState = setDeposit
+        _checkState(_futId, 2);
+
+        if (int(msg.value) + futIndexToFees[_futId] > minGas * gasPrice) {
             // confirmWithdraw
-            _setFwdState(_fwdId, 3);
+            _setFutState(_futId, 3);
             // update fee balance
-            _setFwdFee(_fwdId, int(msg.value) + fwdIndexToFees[_fwdId] - minGas * gasPrice);
+            _setFutFee(_futId, int(msg.value) + futIndexToFees[_futId] - minGas * gasPrice);
         }
     }
 
-    function _setCancelFlag(int _fwdId) internal {
-        if (msg.sender == fwdRequests[_fwdId].receiverAddr) {
-            cancelRequestReceiver[_fwdId] = true;
+    function _setCancelFlag(int _futId) internal {
+        if (msg.sender == futRequests[_futId].receiverAddr) {
+            cancelRequestReceiver[_futId] = true;
         }
 
-        if (msg.sender == fwdRequests[_fwdId].senderAddr) {
-            cancelRequestSender[_fwdId] = true;
+        if (msg.sender == futRequests[_futId].senderAddr) {
+            cancelRequestSender[_futId] = true;
         }
     }
 
-    function _cancelConfirm(int _fwdId) internal {
+    function _cancelConfirm(int _futId) internal {
         // set cancelflag
-        _setCancelFlag(_fwdId);
+        _setCancelFlag(_futId);
         // confirmCancel
-        _setFwdState(_fwdId, 5);
+        _setFutState(_futId, 5);
 
-        _setFwdFee(_fwdId, int(msg.value) + fwdIndexToFees[_fwdId] - minGas * gasPrice);
+        _setFutFee(_futId, int(msg.value) + futIndexToFees[_futId] - minGas * gasPrice);
     }
 
-    function _emergencyConfirm(int _fwdId) internal {
+    function _emergencyConfirm(int _futId) internal {
         // only sender can execute
-        _isSender(_fwdId);
+        _isSender(_futId);
         // confirmCancel
-        _setFwdState(_fwdId, 7);
+        _setFutState(_futId, 7);
 
-        _setFwdFee(_fwdId, int(msg.value) + fwdIndexToFees[_fwdId] - minGas * gasPrice);
+        _setFutFee(_futId, int(msg.value) + futIndexToFees[_futId] - minGas * gasPrice);
     }
 }
 
-contract FwdCore is FwdContRequest, FwdContProcess {
-    function calculateFxAmtFromId(int _fwdId) orderlyConnected() available() onlyParty(_fwdId) view public returns(int) {
-        return _calculateFxAmtFromId(_fwdId);
+contract FutCore is FutContRequest, FutContProcess {
+    function calculateFxAmtFromId(int _futId, int _index) orderlyConnected() available() onlyParty(_futId) view public returns(int) {
+        return _calculateFxAmtFromId(_futId, _index);
     }
 
     // Admin Functions
-    function adminSetAllCancel(bool _flag) onlyOwner() public {
+    function admin_setAllCancel(bool _flag) onlyOwner() public {
         _setAllCancel(_flag);
     }
 
-    function adminGetContractBalance() onlyOwner() view public returns(uint) {
+    function admin_getContractBalance() onlyOwner() view public returns(uint) {
         return address(this).balance;
     }
 
-    function adminGetFlags() onlyOwner() view public returns(bool, int, int, int, bool, int, bool, int, int) {
-        return(
-            cancelFlag,
-            CANCELLED_FEE_FLAG,
-            DELIVERED_FEE_FLAG,
-            FAIL_FLAG,
-            killswitch,
-            newVersion,
-            paused,
-            SUCCESS_FLAG,
-            unrespondedCnt
-            );
-    }
-
-    function adminGetFwdRequest(int _fwdId) onlyOwner() view public returns(bool, bool, int, int, bytes32, int, int) {
-        return(
-            cancelRequestSender[_fwdId],
-            cancelRequestReceiver[_fwdId],
-            fwdDeposits[_fwdId],
-            fwdIndexToFees[_fwdId],
-            fwdIndexToFwdState[_fwdId],
-            fwdIndexToFxRate[_fwdId],
-            fwdIndexToRequests[_fwdId]
-            );
-    }
-
-    function adminGetFees() onlyOwner() view public returns(int, int, int, int, int) {
-        return (
-            gasPrice,
-            minGas,
-            cancellationGas,
-            externalGas,
-            reqGas
-            );
-    }
-
-    function adminSetFees(int _gasPrice, int _minGas, int _cancellationGas, int _externalGas, int _reqGas) onlyOwner() public {
+    function admin_setFees(int _gasPrice, int _minGas, int _cancellationGas, int _externalGas, int _reqGas) onlyOwner() public {
         _setFees(_gasPrice, _minGas, _cancellationGas, _externalGas);
 
         _setReqFee(_reqGas);
     }
 
-    function adminResetKillswitch() onlyOwner() public {
+    function admin_resetKillswitch() onlyOwner() public {
         _resetKillswitch();
     }
 
-    function adminResetUnrespond() onlyOwner() public {
+    function admin_resetUnrespond() onlyOwner() public {
         _resetUnrespond();
     }
 
-    function adminSetNewVersion(address _newAddr) onlyOwner() public {
+    function admin_setNewVersion(address _newAddr) onlyOwner() public {
         _setNewVersion(_newAddr);
     }
 
-    function adminWithdraw() onlyOwner() public {
+    function admin_withdraw() onlyOwner() public {
         _withdraw();
     }
 
-    function adminEmergencyCancel(int64 _fwdId) orderlyConnected() available() onlyOwner() public payable {
+    function admin_emergencyCancel(int64 _futId) orderlyConnected() available() onlyOwner() public payable {
 
-        _emergencyCancel(_fwdId);
+        _emergencyCancel(_futId);
     }
 
     // user functions
-    function request(
+    function user1_request(
         //int _contractDay,
         int _settlementDuration,
         int _expireDuration,
@@ -1114,41 +1189,50 @@ contract FwdCore is FwdContRequest, FwdContProcess {
         _request(_settlementDuration, _expireDuration, _receiverAddr, _senderAddr, _baseAmt);
     }
 
-    function deposit(int _fwdId) orderlyConnected() available() public payable {
+    function user2_deposit(int _futId) orderlyConnected() available() public payable {
 
-        _deposit(_fwdId);
+        _deposit(_futId);
     }
 
-    function withdrawConfirm(int _fwdId) orderlyConnected() available() public payable {
-
-        _withdrawConfirm(_fwdId);
+    function user3_withdrawConfirm(int _futId) orderlyConnected() available() public payable {
+        // primise: sender pay rest depositAmt as msg.value after confirm additional depositAmt
+        // it need to exceed settlement duration
+        require(int(now) > futRequests[_futId].contractDay + futRequests[_futId].settlementDuration);
+        // set margin state
+        _setMarginState(_futId, 1);
+        //
+        _withdrawConfirm(_futId);
     }
 
-    function withdraw(int _fwdId) orderlyConnected() available() public {
+    function user4_addiditonalDeposit(int _futId) orderlyConnected() available() public {
+        _additionalDeposit(_futId);
+    }
+
+    function user5_withdraw(int _futId) orderlyConnected() available() public {
         // withdraw depositted asset
-        _withdrawFwd(_fwdId);
+        _withdrawFut(_futId);
     }
 
-    function cancel(int64 _fwdId) orderlyConnected() available() onlyParty(_fwdId) public payable {
+    function user_cancel(int64 _futId) orderlyConnected() available() onlyParty(_futId) public payable {
         // set cancelflag
-        _setCancelFlag(_fwdId);
+        _setCancelFlag(_futId);
         // confirm both cancel flag is established
-        require(cancelRequestSender[_fwdId] == true && cancelRequestReceiver[_fwdId] == true);
+        require(cancelRequestSender[_futId] == true && cancelRequestReceiver[_futId] == true);
         // if fxRate is not fetch yet, refund fee.
-        if (fwdIndexToFwdState[_fwdId] == fwdStates[0]) {
-            _deleteRequest(_fwdId);
+        if (futIndexToFutState[_futId] == futStates[0]) {
+            _deleteRequest(_futId);
         }
-        _cancelFwd(_fwdId);
+        _cancelFut(_futId);
     }
 
-    function cancelConfirm(int _fwdId) orderlyConnected() available() onlyParty(_fwdId) public payable {
+    function user_cancelConfirm(int _futId) orderlyConnected() available() onlyParty(_futId) public payable {
 
-        _cancelConfirm(_fwdId);
+        _cancelConfirm(_futId);
     }
 
-    function emergencyConfirm(int _fwdId) orderlyConnected() available() public payable {
+    function user_emergencyConfirm(int _futId) orderlyConnected() available() public payable {
 
-        _emergencyConfirm(_fwdId);
+        _emergencyConfirm(_futId);
     }
 
     function response(
