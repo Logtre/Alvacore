@@ -38,7 +38,7 @@ def set_address(bc_network):
         contracts_address = 'set_your_address'
     # @Ropsten testnet
     elif bc_network == 3:
-        contracts_address = '0xa6D2d643681Fe7737569793cBcF9dD62C869D20b'
+        contracts_address = '0xf1cB19B22050689472e29EBe4EEFCFAA1FF0D7A7'
     # @Rinkeby testnet
     elif bc_network == 4:
         contracts_address = 'set_your_address'

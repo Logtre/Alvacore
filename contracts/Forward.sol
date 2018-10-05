@@ -260,6 +260,10 @@ contract Orderly is Base {
         alvcWallet = _newAlvcWallet;
     }
 
+    function _setAlvcAddress(address _newAlvcAddress) internal {
+        alvcAddress = _newAlvcAddress;
+    }
+
     function getRequestIndex() public view returns(int) {
         int requestsLength = requestCnt;
 
@@ -400,7 +404,6 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
             _paramsHash32bytes != requests[_requestId].paramsHash) {
             // error
             _setRequestState(_requestId, 4);
-            return;
         } else if (cancelFlag) {
             // If the request is cancelled by the requester, cancellation
             // fee goes to the SGX account and set the request as having
@@ -447,6 +450,10 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
 
     function setAlvcWallet(address _newAlvcWallet) onlyOwner() public {
         _setAlvcWallet(_newAlvcWallet);
+    }
+
+    function setAlvcAddress(address _newAlvcAddress) onlyOwner() public {
+        _setAlvcAddress(_newAlvcAddress);
     }
 
     function setFees(int _gasPrice, int _minGas, int _cancellationGas, int _externalGas) onlyOwner() public {
@@ -696,7 +703,7 @@ contract FwdCont is Base {
         // fxRate is [ETH/USD].
         // to calculate payment ether, devide baseAmt by fxRate.
         // fxrate is 1000times, so amaount provide 1000
-        // exchangedAmt's unit is finney (=1/1000 ether)
+        // Assumed unit is ether = 1000 finney
         int unit = 1000 finney;
         int exchangedAmt = _baseAmt  * 1000 * unit / _fxRate;
         return exchangedAmt;
@@ -765,7 +772,8 @@ contract FwdCont is Base {
 
 contract FwdContRequest is FwdCont {
 
-    event ForwardInfo(int fwdId,
+    event ForwardInfo(
+        int fwdId,
         address fwdOwner,
         bytes32 fwdState,
         int contractDay,
@@ -777,9 +785,10 @@ contract FwdContRequest is FwdCont {
         int baseAmt,
         int fxRate,
         int depositAmt
-    ); // log for
+    ); // log for create requests
 
-    event Request(int requestId,
+    event Request(
+        int requestId,
         address requester,
         bytes32 data
     ); // log for requests
@@ -849,6 +858,7 @@ contract FwdContRequest is FwdCont {
             0,
             0
         );
+
     }
 
     function _response(
@@ -883,6 +893,12 @@ contract FwdContRequest is FwdCont {
 }
 
 contract FwdContProcess is FwdCont {
+    event Deposit(
+        int fwdId,
+        int depositAmt,
+        bytes32 fwdState,
+        int fee
+    );
 
     function _cancelFwd(int64 _fwdId) internal {
         // fwdState = confirmCancel
@@ -978,6 +994,8 @@ contract FwdContProcess is FwdCont {
             _setFwdState(_fwdId, 2);
             // update fee
             _setFwdFee(_fwdId, fwdIndexToFees[_fwdId] - minGas * gasPrice);
+
+            emit Deposit(_fwdId, int(fwdDeposits[_fwdId]), fwdIndexToFwdState[_fwdId], int(fwdIndexToFees[_fwdId]));
         }
     }
 
@@ -1102,7 +1120,7 @@ contract FwdCore is FwdContRequest, FwdContProcess {
     }
 
     // user functions
-    function request(
+    function request (
         //int _contractDay,
         int _settlementDuration,
         int _expireDuration,
@@ -1158,5 +1176,39 @@ contract FwdCore is FwdContRequest, FwdContProcess {
     ) available() orderlyConnected() external {
 
         _response(_requestId, _error, _respData);
+    }
+
+    function getFwdRequest(int _fwdId) view public returns(
+            address,
+            int,
+            int,
+            int,
+            address,
+            address,
+            int
+        ) {
+            return(
+                fwdRequests[_fwdId].fwdOwner,
+                fwdRequests[_fwdId].contractDay,
+                fwdRequests[_fwdId].settlementDuration,
+                fwdRequests[_fwdId].expireDuration,
+                fwdRequests[_fwdId].receiverAddr,
+                fwdRequests[_fwdId].senderAddr,
+                fwdRequests[_fwdId].baseAmt
+            );
+        }
+
+    function getFwdRequestInput(int _fwdId) view public returns(
+            int,
+            int,
+            bytes32,
+            int
+        ) {
+        return(
+            fwdDeposits[_fwdId],
+            fwdIndexToFees[_fwdId],
+            fwdIndexToFwdState[_fwdId],
+            fwdIndexToFxRate[_fwdId]
+        );
     }
 }

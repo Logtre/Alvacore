@@ -6,11 +6,13 @@ from hashprocessor import CreateCheckHash
 from web3.contract import ConciseContract
 from moddata import ModifyData
 import init
+import time
 import logdefinition as logdef
 
 class ETHConnector:
 
     def __init__(self, bc_network):
+        self.timeout = 120
         self.python_env = init.get_env()
         if self.python_env.startswith('mac') or self.python_env.startswith('win'):
             # @Main net
@@ -20,7 +22,7 @@ class ETHConnector:
             # @Ropsten testnet
             elif bc_network == 3:
                 #self.w3 = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/aws_testnet/geth.ipc')) # geth
-                self.w3 = Web3(IPCProvider(ipc_path='/Users/user/Library/Application Support/io.parity.ethereum/jsonrpc.ipc', timeout=30)) # parity
+                self.w3 = Web3(IPCProvider('/Users/user/Library/Application Support/io.parity.ethereum/jsonrpc.ipc', timeout=self.timeout)) # parity
                 logdef.logger.info("connect to Ropsten testnet")
             # @Rinkeby testnet
             elif bc_network == 4:
@@ -47,7 +49,7 @@ class ETHConnector:
         # set pre-funded account as sender
         if (self.w3.isConnected()):
             logdef.logger.info("success to connect network")
-            self.w3.eth.defaultAccount = self.w3.eth.accounts[1]
+            #self.w3.eth.defaultAccount = self.w3.eth.accounts[2]
             self.addr = init.set_address(bc_network)
             self.abi = init.set_ABI()
             self.contract = self.w3.eth.contract(address = self.addr,abi = self.abi)
@@ -66,13 +68,14 @@ class ETHConnector:
             }
         else:
             logdef.logger.info("fail to connect network")
-            return False
 
     def read_request(self):
         create_hash = CreateCheckHash()
         target_request_id = ''
         target_request = ''
         # 未取得のFWDリクエストリストの先頭インデックス番号を取得する
+        logdef.logger.info("start getting requestId")
+        #transaction_msg = {'from':self.w3.eth.defaultAccount, 'gas':500000}
         target_request_id = self.contract.functions.getRequestIndex().call()
         #target_request_id = self.contract.getRequestIndex()
         logdef.logger.info("target requestId is: {}".format(target_request_id))
@@ -101,19 +104,28 @@ class ETHConnector:
 
 
     def deliver_response(self, arg):
+        logdef.logger.info("alvcWallet is: {}".format(self.contract.functions.alvcWallet().call()))
+        self.w3.eth.defaultAccount = self.w3.eth.accounts[2]
+        logdef.logger.info("all eth accounts is{}".format(self.w3.eth.accounts))
+        logdef.logger.info("eth defaultAccount is{}".format(self.w3.eth.defaultAccount))
+        #self.w3.eth.defaultAccount = '0x6613b9220643D378B0a88B26C1ca86BB440DC22a'
+        #executeAccount = '0x6613b9220643D378B0a88B26C1ca86BB440DC22a'
         if self.w3.personal.unlockAccount(self.w3.eth.defaultAccount, "hogehoge01"):
-            logdef.logger.info("success unlockAccount. sender address is:{}".format(self.w3.eth.defaultAccount))
-            transaction_msg = {'from':self.w3.eth.defaultAccount, 'gas':500000}
-            self.contract.functions.deliver(arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]).transact(transaction_msg)
+            logdef.logger.info("success unlockAccount. sender address is: {}".format(self.w3.eth.defaultAccount))
+            transaction_msg = {'from':self.w3.eth.defaultAccount, 'gas':50000000000000}
+            #import pdb; pdb.set_trace()
+            tx_hash = self.contract.functions.deliver(arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]).transact()
             #self.contract.functions.deliver({'_requestId': arg["request_id"], 'paramsHash': arg["params_hash"], '_error': arg["error"], '_respData': arg["resp_data"]})
             #self.contract.deliver(buildTransaction = (arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]), transact = transaction_msg)
             #self.contract.functions.deliver(arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]).call()
+            tx_receipt = self.w3.eth.waitForTransactionReceipt(tx_hash)
+            logdef.logger.info("transaction receipt is:{}".format(tx_receipt))
         else:
             logdef.logger.info("unsuccess unlockAccount.")
             return
 
         deliver_flag = self.mod_data.extract_text(self.contract.functions.requestIndexToState(arg["request_id"]).call())
-
+        logdef.logger.info("deliver flag is:{}".format(deliver_flag))
         if deliver_flag == "delivering":
             logdef.logger.info("sucess delivering. requestState is:{}".format(deliver_flag))
             return
@@ -121,3 +133,11 @@ class ETHConnector:
             # error内容をrequest{}に保存
             logdef.logger.error("error: fail delivering. requestState is:{}".format(deliver_flag))
             return
+
+    def wait_on_tx_receipt(tx_hash):
+        start_time = time.time()
+        while True:
+            if start_time + self.timeout < time.time():
+                raise TimeoutError("Timeout occurred waiting for tx receipt")
+            if self.w3.eth.getTransactionReceipt(tx_hash):
+                return self.w3.eth.getTransactionReceipt(tx_hash)
