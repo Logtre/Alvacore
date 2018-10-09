@@ -21,7 +21,7 @@ class ApiConnector:
     def fetch_fxrate(self, arg):
         # goal: apiからresponseをgetする
         self.url = self.request_url.format(currency_code = arg)
-        response = requests.get(self.url)
+        response = requests.get(self.url, timeout=300)
 
         if response:
             logdef.logger.info("sucess getting data from CMP API.")
