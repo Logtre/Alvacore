@@ -10,9 +10,6 @@ import time
 import logdefinition as logdef
 import configparser
 
-config = configparser.ConfigParser()
-config.read('setting.ini')
-
 class ETHConnector:
 
     def __init__(self, bc_network):
@@ -24,37 +21,37 @@ class ETHConnector:
             # @Main net
             if bc_network == 1:
                 self.section1 = 'local_main_net'
-                self.timeout = self.config.get(self.section1, 'timeout')
+                self.timeout = int(self.config.get(self.section1, 'timeout'))
                 self.path_to_ipc = self.config.get(self.section1, 'ipc')
                 self.orderly_abi = self.config.get(self.section1, 'orderly_abi')
                 self.orderly_addr = self.config.get(self.section1, 'orderly_addr')
                 self.default_account = self.config.get(self.section1, 'def_account')
                 self.default_account_pwd = self.config.get(self.section1, 'def_account_pwd')
-                self.w3 = Web3(IPCProvider(self.path_to_ipc, self.timeout))
+                self.w3 = Web3(IPCProvider(self.path_to_ipc, timeout=self.timeout))
                 logdef.logger.info("connect to Main net")
             # @Ropsten testnet
             elif bc_network == 3:
                 self.section3 = 'local_ropsten'
-                self.timeout = self.config.get(self.section3, 'timeout')
+                self.timeout = int(self.config.get(self.section3, 'timeout'))
                 self.path_to_ipc = self.config.get(self.section3, 'ipc')
                 self.orderly_abi = self.config.get(self.section3, 'orderly_abi')
                 self.orderly_addr = self.config.get(self.section3, 'orderly_addr')
                 self.default_account = self.config.get(self.section3, 'def_account')
                 self.default_account_pwd = self.config.get(self.section3, 'def_account_pwd')
-                self.w3 = Web3(IPCProvider(self.path_to_ipc, self.timeout))
+                self.w3 = Web3(IPCProvider(self.path_to_ipc, timeout=self.timeout))
                 #self.w3 = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/aws_testnet/geth.ipc')) # geth
                 #self.w3 = Web3(IPCProvider('/Users/user/Library/Application Support/io.parity.ethereum/jsonrpc.ipc', timeout=self.timeout)) # parity
                 logdef.logger.info("connect to Ropsten testnet")
             # @Rinkeby testnet
             elif bc_network == 4:
                 self.section4 = 'local_rinkeby'
-                self.timeout = self.config.get(self.section4, 'timeout')
+                self.timeout = int(self.config.get(self.section4, 'timeout'))
                 self.path_to_ipc = self.config.get(self.section4, 'ipc')
                 self.orderly_abi = self.config.get(self.section4, 'orderly_abi')
                 self.orderly_addr = self.config.get(self.section4, 'orderly_addr')
                 self.default_account = self.config.get(self.section4, 'def_account')
                 self.default_account_pwd = self.config.get(self.section4, 'def_account_pwd')
-                self.w3 = Web3(IPCProvider(self.path_to_ipc, self.timeout))
+                self.w3 = Web3(IPCProvider(self.path_to_ipc, timeout=self.timeout))
                 #self.w3 = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/eth_rinkeby_net/geth.ipc'))
                 ipcprovider.middleware_stack.inject(geth_poa_middleware, layer=0)
                 logdef.logger.info("connect to Rinkeby testnet")
@@ -62,31 +59,31 @@ class ETHConnector:
             # @Main net
             if bc_network == 1:
                 self.section6 = 'aws_main_net'
-                self.timeout = self.config.get(self.section6, 'timeout')
+                self.timeout = int(self.config.get(self.section6, 'timeout'))
                 self.path_to_ipc = self.config.get(self.section6, 'ipc')
                 self.orderly_abi = self.config.get(self.section6, 'orderly_abi')
                 self.orderly_addr = self.config.get(self.section6, 'orderly_addr')
                 self.default_account = self.config.get(self.section6, 'def_account')
                 self.default_account_pwd = self.config.get(self.section6, 'def_account_pwd')
-                self.w3 = Web3(IPCProvider(self.path_to_ipc, self.timeout))
+                self.w3 = Web3(IPCProvider(self.path_to_ipc, timeout=self.timeout))
                 #self.w3 = Web3(IPCProvider('path/to/ipc'))
                 logdef.logger.info("connect to Main net")
             # @Ropsten testnet
             elif bc_network == 3:
                 self.section8 = 'aws_ropsten'
-                self.timeout = self.config.get(self.section8, 'timeout')
+                self.timeout = int(self.config.get(self.section8, 'timeout'))
                 self.path_to_ipc = self.config.get(self.section8, 'ipc')
                 self.orderly_abi = self.config.get(self.section8, 'orderly_abi')
                 self.orderly_addr = self.config.get(self.section8, 'orderly_addr')
                 self.default_account = self.config.get(self.section8, 'def_account')
                 self.default_account_pwd = self.config.get(self.section8, 'def_account_pwd')
-                self.w3 = Web3(IPCProvider(self.path_to_ipc, self.timeout))
+                self.w3 = Web3(IPCProvider(self.path_to_ipc, timeout=self.timeout))
                 #self.w3 = Web3(IPCProvider('/home/ubuntu/.local/share/io.parity.ethereum/jsonrpc.ipc'))
                 logdef.logger.info("connect to Ropsten testnet")
             # @Rinkeby testnet
             elif bc_network == 4:
                 self.section9 = 'local_main_net'
-                self.timeout = self.config.get(self.section9, 'timeout')
+                self.timeout = int(self.config.get(self.section9, 'timeout'))
                 self.path_to_ipc = self.config.get(self.section9, 'ipc')
                 self.orderly_abi = self.config.get(self.section9, 'orderly_abi')
                 self.orderly_addr = self.config.get(self.section9, 'orderly_addr')
