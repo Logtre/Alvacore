@@ -7,3 +7,5 @@ man/*
 !.gitignore
 __pycache__*
 *.log
+setting.ini
+orderly_config.py

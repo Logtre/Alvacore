@@ -17,17 +17,10 @@ def get_env():
     logdef.logger.info("success get platform:{}".format(platform))
     return platform + ('32' if sys.maxsize < 2**31 else '64')
 
-def set_ABI():
+def set_ABI(path_to_abi):
     abi = ''
-    python_env = get_env()
-    # executed in Local
-    if python_env.startswith('mac') or python_env.startswith('win'):
-        with open('/Users/user/ubuntu/web3/FwdOrderly_ABI.json') as json_file:
-            abi = json.load(json_file)
-    # executed in AWS
-    elif python_env.startswith('lin'):
-        with open('/home/ubuntu/web3/FwdOrderly_ABI.json') as json_file:
-            abi = json.load(json_file)
+    with open(path_to_abi) as json_file:
+        abi = json.load(json_file)
     #logdef.logger.info("success get abi:{}".format(abi))
     return abi
 
