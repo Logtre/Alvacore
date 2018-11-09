@@ -1,17 +1,16 @@
 # Alvacore
 
+
 ## Introduction
 The Alvacore is the smartcontract that enable payment reservation and future trading.
 Alvacore can access from any wallet.
+
 
 ## Build&Install
 If you want to install the smartcontract, you can simply run the below command:
 ```
 $ git clone https://github.com/Logtre/Alvacore.git
 ```
-
-## Quick Usage
-
 
 ## Development
 For development you need:
@@ -30,7 +29,3 @@ $ brew install python
 # install web3py
 $ pip install web3
 ```
-
-## Maintenance
-
-## Lisence
