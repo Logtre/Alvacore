@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "https://github.com/Logtre/Alvacore/contracts/Base.sol";
+import "https://github.com/Logtre/Alvacore/contracts/FwdOrderlyRequest.sol";
 
 
 contract FwdCont is Base {
