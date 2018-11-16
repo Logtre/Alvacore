@@ -53,8 +53,22 @@ class ETHConnector:
                 self.default_account_pwd = self.config.get(self.section4, 'def_account_pwd')
                 self.w3 = Web3(IPCProvider(self.path_to_ipc, timeout=self.timeout))
                 #self.w3 = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/eth_rinkeby_net/geth.ipc'))
-                ipcprovider.middleware_stack.inject(geth_poa_middleware, layer=0)
+                self.w3.middleware_stack.inject(geth_poa_middleware, layer=0)
                 logdef.logger.info("connect to Rinkeby testnet")
+            # @Ropsten testnet
+            elif bc_network == 5:
+                self.section5 = 'local_private'
+                self.timeout = int(self.config.get(self.section5, 'timeout'))
+                self.path_to_ipc = self.config.get(self.section5, 'ipc')
+                self.orderly_abi = self.config.get(self.section5, 'orderly_abi')
+                self.orderly_addr = self.config.get(self.section5, 'orderly_addr')
+                self.default_account = self.config.get(self.section5, 'def_account')
+                self.default_account_pwd = self.config.get(self.section5, 'def_account_pwd')
+                self.w3 = Web3(IPCProvider(self.path_to_ipc, timeout=self.timeout))
+                #self.w3 = Web3(IPCProvider('/tools/ethereum/Geth-1.8.11/home/aws_testnet/geth.ipc')) # geth
+                #self.w3 = Web3(IPCProvider('/Users/user/Library/Application Support/io.parity.ethereum/jsonrpc.ipc', timeout=self.timeout)) # parity
+                logdef.logger.info("connect to Private net")
+        # @AWS
         elif self.python_env.startswith('lin'):
             # @Main net
             if bc_network == 1:
@@ -82,7 +96,7 @@ class ETHConnector:
                 logdef.logger.info("connect to Ropsten testnet")
             # @Rinkeby testnet
             elif bc_network == 4:
-                self.section9 = 'local_main_net'
+                self.section9 = 'aws_rinkeby'
                 self.timeout = int(self.config.get(self.section9, 'timeout'))
                 self.path_to_ipc = self.config.get(self.section9, 'ipc')
                 self.orderly_abi = self.config.get(self.section9, 'orderly_abi')
@@ -91,8 +105,20 @@ class ETHConnector:
                 self.default_account_pwd = self.config.get(self.section9, 'def_account_pwd')
                 self.w3 = Web3(IPCProvider(self.path_to_ipc))
                 #self.w3 = Web3(IPCProvider('/home/ubuntu/.ethereum/rinkeby/geth.ipc'))
-                ipcprovider.middleware_stack.inject(geth_poa_middleware, layer=0)
+                self.w3.middleware_stack.inject(geth_poa_middleware, layer=0)
                 logdef.logger.info("connect to Rinkeby testnet")
+            # @Private net
+            elif bc_network == 5:
+                    self.section10 = 'aws_private'
+                    self.timeout = int(self.config.get(self.section10, 'timeout'))
+                    self.path_to_ipc = self.config.get(self.section10, 'ipc')
+                    self.orderly_abi = self.config.get(self.section10, 'orderly_abi')
+                    self.orderly_addr = self.config.get(self.section10, 'orderly_addr')
+                    self.default_account = self.config.get(self.section10, 'def_account')
+                    self.default_account_pwd = self.config.get(self.section10, 'def_account_pwd')
+                    self.w3 = Web3(IPCProvider(self.path_to_ipc, timeout=self.timeout))
+                    #self.w3 = Web3(IPCProvider('/home/ubuntu/.local/share/io.parity.ethereum/jsonrpc.ipc'))
+                    logdef.logger.info("connect to Private net")
         else:
             self.w3 = ''
         #self.w3 = init.set_IPCProvider(bc_network)
@@ -167,7 +193,10 @@ class ETHConnector:
             logdef.logger.info("success unlockAccount. sender address is: {}".format(self.w3.eth.defaultAccount))
             transaction_msg = {'from':self.w3.eth.defaultAccount, 'gas':50000000000000}
             #import pdb; pdb.set_trace()
-            tx_hash = self.contract.functions.deliver(arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]).transact()
+            tx_hash = self.contract.functions.deliver(arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]).transact({
+                'from':self.w3.eth.defaultAccount,
+                'gas':5000000
+            })
             #self.contract.functions.deliver({'_requestId': arg["request_id"], 'paramsHash': arg["params_hash"], '_error': arg["error"], '_respData': arg["resp_data"]})
             #self.contract.deliver(buildTransaction = (arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]), transact = transaction_msg)
             #self.contract.functions.deliver(arg["request_id"], arg["params_hash"], arg["error"], arg["resp_data"]).call()

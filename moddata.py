@@ -3,6 +3,7 @@
 import sys
 import hashlib
 import logdefinition as logdef
+import binascii
 
 class ModifyData:
     def __init__(self):
@@ -20,6 +21,7 @@ class ModifyData:
         return extracted_number
 
     def extract_text(self, arg):
+        #extracted_text = binascii.a2b_hex(arg).decode('utf-8').replace('\x00','')
         extracted_text = arg.decode('utf-8').replace('\x00', '')
         #extracted_text = arg.decode('utf-8')
         return extracted_text

@@ -44,6 +44,7 @@ contract Base is AccessControl {
     int internal gasPrice = 5 * 10**10;
     int internal cancellationGas = 250000; // charged when the requester cancels a request that is not responded
     int internal externalGas = 50000;
+    int internal txGasPrice = 50 * 10 ** 9; //50GWei
 
     int internal constant CANCELLED_FEE_FLAG = 1;
     int internal constant DELIVERED_FEE_FLAG = 0;
@@ -125,11 +126,12 @@ contract Base is AccessControl {
         }
     }
 
-    function _setFees(int _gasPrice, int _minGas, int _cancellationGas, int _externalGas) internal {
+    function _setFees(int _gasPrice, int _minGas, int _cancellationGas, int _externalGas, int _txGasPrice) internal {
         gasPrice = _gasPrice;
         minGas = _minGas;
         cancellationGas = _cancellationGas;
         externalGas = _externalGas;
+        txGasPrice = _txGasPrice;
     }
     function _resetKillswitch() internal {
         killswitch = false;
@@ -395,7 +397,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
     }
 
     function deliver(int _requestId, bytes _paramsHash, int _error, int _respData) whenNotPaused() available() public {
-        int _callbackGas = (requests[_requestId].fee - minGas * gasPrice) / int(tx.gasprice); // gas left for the callback function
+        int _callbackGas = (requests[_requestId].fee - minGas * gasPrice) / txGasPrice; // gas left for the callback function
         bytes32 _paramsHash32bytes = _convertBytesToBytes32(_paramsHash);
 
         _isALVC(msg.sender);
@@ -456,8 +458,8 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
         _setAlvcAddress(_newAlvcAddress);
     }
 
-    function setFees(int _gasPrice, int _minGas, int _cancellationGas, int _externalGas) onlyOwner() public {
-        _setFees(_gasPrice, _minGas, _cancellationGas, _externalGas);
+    function setFees(int _gasPrice, int _minGas, int _cancellationGas, int _externalGas, int _txGasPrice) onlyOwner() public {
+        _setFees(_gasPrice, _minGas, _cancellationGas, _externalGas, _txGasPrice);
     }
 
     function resetKillswitch() onlyOwner() public {
@@ -1092,8 +1094,8 @@ contract FwdCore is FwdContRequest, FwdContProcess {
             );
     }
 
-    function adminSetFees(int _gasPrice, int _minGas, int _cancellationGas, int _externalGas, int _reqGas) onlyOwner() public {
-        _setFees(_gasPrice, _minGas, _cancellationGas, _externalGas);
+    function adminSetFees(int _gasPrice, int _minGas, int _cancellationGas, int _externalGas, int _txGasPrice, int _reqGas) onlyOwner() public {
+        _setFees(_gasPrice, _minGas, _cancellationGas, _externalGas, _txGasPrice);
 
         _setReqFee(_reqGas);
     }
