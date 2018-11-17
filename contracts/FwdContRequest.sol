@@ -4,35 +4,6 @@ import "https://github.com/Logtre/Alvacore/contracts/FwdCont.sol";
 
 
 contract FwdContRequest is FwdCont {
-
-    event ForwardInfo(
-        int fwdId,
-        address fwdOwner,
-        bytes32 fwdState,
-        int contractDay,
-        int settlementDuration,
-        int expireDuration,
-        address receiverAddr,
-        address senderAddr,
-        int fee,
-        int baseAmt,
-        int fxRate,
-        int depositAmt
-    ); // log for create requests
-
-    event Request(
-        int requestId,
-        address requester,
-        bytes32 data
-    ); // log for requests
-
-    event Response(
-        int requestId,
-        address requester,
-        int error,
-        int data
-    ); // log for responses
-
     //FwdOrderlyRequest public requestOrderly;
 
     int buffer = 120;

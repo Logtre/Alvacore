@@ -5,6 +5,9 @@ import "https://github.com/Logtre/Alvacore/contracts/Base.sol";
 
 contract Orderly is Base {
 
+    event RequestInfo(int requestId, bytes4 requestType, address requester, int fee, bytes32 paramsHash, int timestamp, bytes32 _requestState, bytes32 requestData); // log of requests, the Town Crier server watches this event and processes requests
+    event DeliverInfo(int requestId, int fee, int gasPrice, int gasLeft, int callbackGas, bytes32 paramsHash, int error, int respData); // log of responses
+    event CheckFee(int msgValue, int minFee, address msgSnder);
     event RequestCancel(int requestId, address canceller, int flag);
     event RequestDelete(int requestId);
     event RequestState(int requestId, bytes32 requestState);

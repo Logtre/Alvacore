@@ -4,12 +4,6 @@ import "https://github.com/Logtre/Alvacore/contracts/FwdCont.sol";
 
 
 contract FwdContProcess is FwdCont {
-    event Deposit(
-        int fwdId,
-        int depositAmt,
-        bytes32 fwdState,
-        int fee
-    );
 
     function _cancelFwd(int64 _fwdId) internal {
         // fwdState = confirmCancel

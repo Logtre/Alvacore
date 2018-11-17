@@ -6,7 +6,51 @@ import "https://github.com/Logtre/Alvacore/contracts/FwdOrderlyRequest.sol";
 
 contract FwdCont is Base {
 
-    event FwdRequestInfo(address fwdOwner, int contractDay, int settlementDuration, int expireDuration, address receiverAddr, address senderAddr, int baseAmt);
+    event ForwardInfo(
+        int fwdId,
+        address fwdOwner,
+        bytes32 fwdState,
+        int contractDay,
+        int settlementDuration,
+        int expireDuration,
+        address receiverAddr,
+        address senderAddr,
+        int fee,
+        int baseAmt,
+        int fxRate,
+        int depositAmt
+    ); // log for create requests
+
+    event Request(
+        int requestId,
+        address requester,
+        bytes32 data
+    ); // log for requests
+
+    event Response(
+        int requestId,
+        address requester,
+        int error,
+        int data
+    ); // log for responses
+
+    event Deposit(
+        int fwdId,
+        int depositAmt,
+        bytes32 fwdState,
+        int fee
+    );
+
+    event FwdRequestInfo(
+        address fwdOwner,
+        int contractDay,
+        int settlementDuration,
+        int expireDuration,
+        address receiverAddr,
+        address senderAddr,
+        int baseAmt
+    );
+
     event FwdCancel(int fwdId, address canceller, int flag);
     event FwdDelete(int fwdId);
     event SetFwdState(int fwdId, bytes32 fwdState);

@@ -6,11 +6,6 @@ import "https://github.com/Logtre/Alvacore/contracts/FwdCharacteristic.sol";
 
 contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
 
-    event RequestInfo(int requestId, bytes4 requestType, address requester, int fee, bytes32 paramsHash, int timestamp, bytes32 _requestState, bytes32 requestData); // log of requests, the Town Crier server watches this event and processes requests
-    event DeliverInfo(int requestId, int fee, int gasPrice, int gasLeft, int callbackGas, bytes32 paramsHash, int error, int respData); // log of responses
-    // for debug
-    event CheckFee(int msgValue, int minFee, address msgSnder);
-
     function withdraw() onlyOwner() public {
         _withdraw();
     }
