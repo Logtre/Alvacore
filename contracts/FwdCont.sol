@@ -57,7 +57,7 @@ contract FwdCont is Base {
     event SetFwdFee(int storedFwdFee);
     event SetFxRate(int fwdId, int fxRate);
     event WithdrawDeposit(int fwdId, address withdrawer, int amount);
-    event OutOfDeposit(int fwdId, address sender, int Additional_certificate);
+    event OutOfDeposit(int fwdId, address sender, int AdditionalCertificate);
 
     struct FwdRequest { // the data struct for forward contract
         address fwdOwner;
