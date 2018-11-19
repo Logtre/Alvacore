@@ -1,6 +1,5 @@
 pragma solidity ^0.4.24;
 
-//import "https://github.com/Logtre/Alvacore/contracts/Base.sol";
 import "https://github.com/Logtre/Alvacore/contracts/lifecycle/Pausable.sol";
 import "https://github.com/Logtre/Alvacore/contracts/utils/Utils.sol";
 import "https://github.com/Logtre/Alvacore/contracts/fees/Fees.sol";

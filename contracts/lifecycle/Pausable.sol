@@ -28,7 +28,7 @@ contract Pausable is Ownable {
 
     bool public killswitch;
     //bool public cancelFlag;
-    uint256 internal unrespondedCnt;
+    //uint256 internal unrespondedCnt;
     uint256 public newVersion;
 
     /**
