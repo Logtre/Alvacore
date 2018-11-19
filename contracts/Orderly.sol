@@ -88,7 +88,7 @@ contract Orderly is Pausable {
 
     function _addRequest(uint256 _requestId, Request _request) private {
         requests[_requestId] = _request;
-        cancelFlag[_requestId = false;
+        cancelFlag[_requestId] = false;
         requestIndexToState[_requestId] = requestStates[0];
         requestCnt ++;
     }
