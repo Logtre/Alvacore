@@ -41,8 +41,8 @@ contract Orderly is Pausable {
     );
     event RequestDelete(uint256 requestId);
     event RequestState(uint256 requestId, bytes32 requestState);
-    event setAlvcAddress(address alvcAddress);
-    event setAlvcWallet(address alvcWallet);
+    event SetAlvcAddress(address alvcAddress);
+    event SetAlvcWallet(address alvcWallet);
 
     struct Request { // the data structure for each request
         address requester;
@@ -119,12 +119,12 @@ contract Orderly is Pausable {
 
     function _setAlvcWallet(address _newAlvcWallet) internal {
         alvcWallet = _newAlvcWallet;
-        emit setAlvcWallet(_newAlvcWallet);
+        emit SetAlvcWallet(_newAlvcWallet);
     }
 
     function _setAlvcAddress(address _newAlvcAddress) internal {
         alvcAddress = _newAlvcAddress;
-        emit setAlvcAddress(_newAlvcAddress);
+        emit SetAlvcAddress(_newAlvcAddress);
     }
 
     function getRequestIndex() public view returns(uint256) {

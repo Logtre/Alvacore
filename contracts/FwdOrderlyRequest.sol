@@ -94,7 +94,8 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
             // If the request is cancelled by the requester, cancellation
             // fee goes to the SGX account and set the request as having
             // been responded to.
-            _transfer(alvcAddress, cancellationGas.mul(gasPrice));
+            //_transfer(alvcAddress, cancellationGas.mul(gasPrice));
+            alvcAddress.transfer(cancellationGas.mul(gasPrice));
             // canceled
             _setRequestState(_requestId, 2);
             return;
@@ -103,10 +104,12 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
         if (_error < 2) {
             // Either no error occurs, or the requester sent an invalid query.
             // Send the fee to the SGX account for its delivering.
-            _transfer(alvcAddress, requests[_requestId].fee);
+            //_transfer(alvcAddress, requests[_requestId].fee);
+            alvcAddress.transfer(requests[_requestId].fee);
         } else {
             // Error in TC, refund the requester.
-            _transfer(requests[_requestId].requester, requests[_requestId].fee);
+            //_transfer(requests[_requestId].requester, requests[_requestId].fee);
+            requests[_requestId].transfer(requests[_requestId].fee);
 
             _setRequestState(_requestId, 5);
         }
@@ -130,9 +133,9 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
         _deleteRequest(_requestId, alvcAddress, minGas.mul(gasPrice).mul(80).div(100));
     }
 
-    function setAllCancel(bool _flag) onlyOwner() public {
-        _setAllCancel(_flag);
-    }
+    //function setAllCancel(bool _flag) onlyOwner() public {
+    //    _setAllCancel(_flag);
+    //}
 
     function setAlvcWallet(address _newAlvcWallet) onlyOwner() public {
         _setAlvcWallet(_newAlvcWallet);
