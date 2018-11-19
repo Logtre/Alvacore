@@ -36,6 +36,6 @@ contract Fees {
         externalGas = _externalGas;
         txGasPrice = _txGasPrice;
 
-        emit setFees(minGas, gasPrice, cancellationGas, externalGas, txGasPrice);
+        emit SetFees(minGas, gasPrice, cancellationGas, externalGas, txGasPrice);
     }
 }

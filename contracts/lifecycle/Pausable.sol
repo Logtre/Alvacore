@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 //import "https://github.com/Logtre/Alvacore/contracts/AccessControl.sol";
 import "https://github.com/Logtre/Alvacore/contracts/ownership/Ownable.sol";
-//import "https://github.com/Logtre/Alvacore/contracts/math/SafeMath.sol";
+import "https://github.com/Logtre/Alvacore/contracts/math/SafeMath.sol";
 //import "openzeppelin-solidity/contracts/utils/Address.sol";
 //import "openzeppelin-solidity/contracts/utils/Arrays.sol";
 //import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
@@ -28,7 +28,7 @@ contract Pausable is Ownable {
 
     bool public killswitch;
     //bool public cancelFlag;
-    //uint256 internal unrespondedCnt;
+    uint256 internal unrespondedCnt;
     uint256 public newVersion;
 
     /**
@@ -83,7 +83,7 @@ contract Pausable is Ownable {
         @dev _upgrade change contract's version.
     */
     function _upgrade(address _newAddr) internal {
-        newVersion = -int(_newAddr);
+        newVersion = uint256(_newAddr);
         killswitch = true;
         emit Upgrade(_newAddr);
     }
@@ -95,21 +95,6 @@ contract Pausable is Ownable {
         if (newVersion == 0) {
             killswitch = false;
         }
-    }
-
-    /**
-        @dev _setFees set contract's fees.
-        @param _gasPrice: gasprice which is set when user create transactions.
-        @param _minGas: minimum gasprice which is set when user create transactions.
-        @param _cancellationGas: gasprice which is needed when cancel order.
-        @param _txGasPrice: gasprice which is needed when order to contract.
-    */
-    function _setFees(uint256 _gasPrice, uint256 _minGas, uint256 _cancellationGas, uint256 _externalGas, uint256 _txGasPrice) internal {
-        gasPrice = _gasPrice;
-        minGas = _minGas;
-        cancellationGas = _cancellationGas;
-        externalGas = _externalGas;
-        txGasPrice = _txGasPrice;
     }
 
     /**
@@ -130,7 +115,7 @@ contract Pausable is Ownable {
         @dev _setNewVersion set newVersion flag.
     */
     function _setNewVersion(address _newAddr) internal {
-        newVersion = int(_newAddr);
+        newVersion = uint256(_newAddr);
     }
 
     /**
