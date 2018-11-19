@@ -10,7 +10,8 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
     using SafeMath for uint256;
 
     function withdraw() onlyOwner() public {
-        _withdraw();
+        //_withdraw();
+        owner.transfer(address(this).balance);
     }
 
     function _correctBusiness(bytes32 _keyword) pure internal {
@@ -23,13 +24,13 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
         bytes4 _callbackFID,
         uint256 _timestamp,
         bytes32 _requestData
-        ) whenNotPaused() available() public payable returns (int) {
+        ) whenNotPaused() available() public payable returns (uint256) {
 
         //int _requestCnt = requestCnt;
 
         _correctBusiness(_requestType);
 
-        if (int(msg.value) < minGas.mul(gasPrice)) {
+        if (uint256(msg.value) < minGas.mul(gasPrice)) {
             //emit CheckFee(msg.value, minGas * gasPrice, msg.sender);
             //_externalCall(msg.sender, msg.value);
             //return FAIL_FLAG;
@@ -37,7 +38,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
         } else {
             uint256 requestId = _createRequest(
                 _requester,
-                int(msg.value),
+                uint256(msg.value),
                 _callbackFID,
                 keccak256(abi.encodePacked(_requestType, _requestData)),
                 _timestamp,
@@ -49,7 +50,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
                 requestId,
                 bytes4(_requestType),
                 msg.sender,
-                int(msg.value),
+                uint256(msg.value),
                 keccak256(abi.encodePacked(_requestType, _requestData)),
                 _timestamp,
                 requestStates[0],
@@ -60,7 +61,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
         }
     }
 
-    function getRequest(uint256 _requestId) view public returns(bytes32, int, bytes32, bytes32) {
+    function getRequest(uint256 _requestId) view public returns(bytes32, uint256, bytes32, bytes32) {
         bytes32 _requestType = KEYWORD;
         uint256 _timestamp = requests[_requestId].timestamp;
         bytes32 _requestState = requestIndexToState[_requestId];
@@ -109,15 +110,15 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
         } else {
             // Error in TC, refund the requester.
             //_transfer(requests[_requestId].requester, requests[_requestId].fee);
-            requests[_requestId].transfer(requests[_requestId].fee);
+            requests[_requestId].requester.transfer(requests[_requestId].fee);
 
             _setRequestState(_requestId, 5);
         }
 
-        emit DeliverInfo(_requestId, requests[_requestId].fee, int(tx.gasprice), int(gasleft()), _callbackGas, _paramsHash32bytes, _error, _respData); // log the response information
+        emit DeliverInfo(_requestId, requests[_requestId].fee, tx.gasprice, gasleft(), _callbackGas, _paramsHash32bytes, _error, _respData); // log the response information
 
-        if (_callbackGas > int(gasleft().div(tx.gasprice)) - externalGas) {
-            _callbackGas = int(gasleft().div(tx.gasprice)) - externalGas;
+        if (_callbackGas > gasleft().div(tx.gasprice) - externalGas) {
+            _callbackGas = gasleft().div(tx.gasprice) - externalGas;
         }
 
         if(!requests[_requestId].requester.call.gas(uint(_callbackGas.mul(gasPrice)))(
@@ -133,9 +134,6 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
         _deleteRequest(_requestId, alvcAddress, minGas.mul(gasPrice).mul(80).div(100));
     }
 
-    //function setAllCancel(bool _flag) onlyOwner() public {
-    //    _setAllCancel(_flag);
-    //}
 
     function setAlvcWallet(address _newAlvcWallet) onlyOwner() public {
         _setAlvcWallet(_newAlvcWallet);
