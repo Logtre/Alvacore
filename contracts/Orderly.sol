@@ -6,7 +6,7 @@ import "https://github.com/Logtre/Alvacore/contracts/fees/Fees.sol";
 import "https://github.com/Logtre/Alvacore/contracts/math/SafeMath.sol";
 
 
-contract Orderly is Pausable, SafeMath {
+contract Orderly is Pausable {
     using SafeMath for uint256;
 
     event RequestInfo(
@@ -68,7 +68,7 @@ contract Orderly is Pausable, SafeMath {
     //bytes32 public constant KEYWORD = "FWD";
 
     mapping (uint256 => Request) public requests;
-    mapping (bool => Request) public cancelFlag;
+    mapping (uint256 => bool) public cancelFlag;
     mapping (uint256 => bytes32) public requestIndexToState;
 
     uint256 public requestCnt;
@@ -81,7 +81,7 @@ contract Orderly is Pausable, SafeMath {
         //      so this means the first request isn't randomly more expensive.
         _createRequest(msg.sender, 0, "", "", uint256(now), "", 0);
         //requestCnt = 1;
-        _owner = msg.sender;
+    owner = msg.sender;
         killswitch = false;
         //cancelFlag = false;
         unrespondedCnt = 0;
@@ -127,7 +127,7 @@ contract Orderly is Pausable, SafeMath {
         emit setAlvcAddress(_newAlvcAddress);
     }
 
-    function getRequestIndex() public view returns(int) {
+    function getRequestIndex() public view returns(uint256) {
         uint256 requestsLength = requestCnt;
 
         for (uint256 i=1; i<requestsLength; i++) {
@@ -160,7 +160,7 @@ contract Orderly is Pausable, SafeMath {
         }
         // refund surplus value
         if(targetRequest.fee - _value > 0) {
-            _owner.transfer(targetRequest.fee.sub(_value));
+            owner.transfer(targetRequest.fee.sub(_value));
             //_transfer(owner, targetRequest.fee - _value);
         }
         // emit event
