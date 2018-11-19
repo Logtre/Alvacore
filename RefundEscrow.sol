@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "./ConditionalEscrow.sol";
+import "https://github.com/Logtre/Alvacore/contracts/payments/escrow/ConditionalEscrow.sol";
 
 /**
  * @title RefundEscrow

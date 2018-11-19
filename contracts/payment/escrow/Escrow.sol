@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
-import "../../math/SafeMath.sol";
-import "../../ownership/Secondary.sol";
+import "https://github.com/Logtre/Alvacore/contracts/math/SafeMath.sol";
+import "https://github.com/Logtre/Alvacore/contracts/ownership/Secondary.sol";
 
  /**
  * @title Escrow

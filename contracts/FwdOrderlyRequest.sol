@@ -2,9 +2,12 @@ pragma solidity ^0.4.24;
 
 import "https://github.com/Logtre/Alvacore/contracts/Orderly.sol";
 import "https://github.com/Logtre/Alvacore/contracts/FwdCharacteristic.sol";
+import "https://github.com/Logtre/Alvacore/contracts/utils/Utils.sol";
+import "https://github.com/Logtre/Alvacore/contracts/fees/Fees.sol";
+import "https://github.com/Logtre/Alvacore/contracts/math/SafeMath.sol";
 
-
-contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
+contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
+    using SafeMath for uint256;
 
     function withdraw() onlyOwner() public {
         _withdraw();
@@ -18,21 +21,21 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
         bytes32 _requestType,
         address _requester,
         bytes4 _callbackFID,
-        int _timestamp,
+        uint256 _timestamp,
         bytes32 _requestData
-        ) whenNotPaused() available() noCancelFlag() public payable returns (int) {
+        ) whenNotPaused() available() public payable returns (int) {
 
         //int _requestCnt = requestCnt;
 
         _correctBusiness(_requestType);
 
-        if (int(msg.value) < minGas * gasPrice) {
+        if (int(msg.value) < minGas.mul(gasPrice)) {
             //emit CheckFee(msg.value, minGas * gasPrice, msg.sender);
             //_externalCall(msg.sender, msg.value);
             //return FAIL_FLAG;
             revert();
         } else {
-            int requestId = _createRequest(
+            uint256 requestId = _createRequest(
                 _requester,
                 int(msg.value),
                 _callbackFID,
@@ -57,9 +60,9 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
         }
     }
 
-    function getRequest(int _requestId) view public returns(bytes32, int, bytes32, bytes32) {
+    function getRequest(uint256 _requestId) view public returns(bytes32, int, bytes32, bytes32) {
         bytes32 _requestType = KEYWORD;
-        int _timestamp = requests[_requestId].timestamp;
+        uint256 _timestamp = requests[_requestId].timestamp;
         bytes32 _requestState = requestIndexToState[_requestId];
         bytes32 _requestData = requests[_requestId].requestData;
 
@@ -67,8 +70,8 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
     }
 
     function requestCancel(
-        int _requestId,
-        int _value
+        uint256 _requestId,
+        uint256 _value
         ) public  whenNotPaused() available() {
         // primise: this function is called by FwdCont
         // only requester can execute
@@ -77,8 +80,8 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
         _cancel(_requestId, _value);
     }
 
-    function deliver(int _requestId, bytes _paramsHash, int _error, int _respData) whenNotPaused() available() public {
-        int _callbackGas = (requests[_requestId].fee - minGas * gasPrice) / txGasPrice; // gas left for the callback function
+    function deliver(uint256 _requestId, bytes _paramsHash, uint256 _error, uint256 _respData) whenNotPaused() available() public {
+        uint256 _callbackGas = (requests[_requestId].fee - minGas * gasPrice) / txGasPrice; // gas left for the callback function
         bytes32 _paramsHash32bytes = _convertBytesToBytes32(_paramsHash);
 
         _isALVC(msg.sender);
@@ -87,11 +90,11 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
             _paramsHash32bytes != requests[_requestId].paramsHash) {
             // error
             _setRequestState(_requestId, 4);
-        } else if (cancelFlag) {
+        } else if (cancelFlag[_requestId]) {
             // If the request is cancelled by the requester, cancellation
             // fee goes to the SGX account and set the request as having
             // been responded to.
-            _transfer(alvcAddress, cancellationGas * gasPrice);
+            _transfer(alvcAddress, cancellationGas.mul(gasPrice));
             // canceled
             _setRequestState(_requestId, 2);
             return;
@@ -110,11 +113,11 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
 
         emit DeliverInfo(_requestId, requests[_requestId].fee, int(tx.gasprice), int(gasleft()), _callbackGas, _paramsHash32bytes, _error, _respData); // log the response information
 
-        if (_callbackGas > int(gasleft()/tx.gasprice) - externalGas) {
-            _callbackGas = int(gasleft()/tx.gasprice) - externalGas;
+        if (_callbackGas > int(gasleft().div(tx.gasprice)) - externalGas) {
+            _callbackGas = int(gasleft().div(tx.gasprice)) - externalGas;
         }
 
-        if(!requests[_requestId].requester.call.gas(uint(_callbackGas * gasPrice))(
+        if(!requests[_requestId].requester.call.gas(uint(_callbackGas.mul(gasPrice)))(
             requests[_requestId].callbackFID,
             _requestId,
             _error,
@@ -124,7 +127,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
 
         _setRequestState(_requestId, 1);
 
-        _deleteRequest(_requestId, alvcAddress, minGas * gasPrice * 80 / 100);
+        _deleteRequest(_requestId, alvcAddress, minGas.mul(gasPrice).mul(80).div(100));
     }
 
     function setAllCancel(bool _flag) onlyOwner() public {
@@ -139,7 +142,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
         _setAlvcAddress(_newAlvcAddress);
     }
 
-    function setFees(int _gasPrice, int _minGas, int _cancellationGas, int _externalGas, int _txGasPrice) onlyOwner() public {
+    function setFees(uint256 _gasPrice, uint256 _minGas, uint256 _cancellationGas, uint256 _externalGas, uint256 _txGasPrice) onlyOwner() public {
         _setFees(_gasPrice, _minGas, _cancellationGas, _externalGas, _txGasPrice);
     }
 
@@ -155,7 +158,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic {
         _setNewVersion(_newAddr);
     }
 
-    function setRequestState(int _requestId, uint _index) onlyOwner() public {
+    function setRequestState(uint256 _requestId, uint256 _index) onlyOwner() public {
         _setRequestState(_requestId, _index);
     }
 }
