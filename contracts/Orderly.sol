@@ -3,10 +3,11 @@ pragma solidity ^0.4.24;
 import "https://github.com/Logtre/Alvacore/contracts/lifecycle/Pausable.sol";
 import "https://github.com/Logtre/Alvacore/contracts/utils/Utils.sol";
 import "https://github.com/Logtre/Alvacore/contracts/fees/Fees.sol";
-//import "https://github.com/Logtre/Alvacore/math/SafeMath.sol";
+import "https://github.com/Logtre/Alvacore/contracts/math/SafeMath.sol";
 
 
-contract Orderly is Pausable {
+contract Orderly is Pausable, SafeMath {
+    using SafeMath for uint256;
 
     event RequestInfo(
         uint256 requestId,
@@ -78,9 +79,9 @@ contract Orderly is Pausable {
         //   1. We can use 0 to denote an invalid request (ids are unsigned)
         //   2. Storage is more expensive when changing something from zero to non-zero,
         //      so this means the first request isn't randomly more expensive.
-        _createRequest(msg.sender, 0, "", "", int(now), "", 0);
+        _createRequest(msg.sender, 0, "", "", uint256(now), "", 0);
         //requestCnt = 1;
-        owner = msg.sender;
+        _owner = msg.sender;
         killswitch = false;
         //cancelFlag = false;
         unrespondedCnt = 0;
@@ -154,11 +155,13 @@ contract Orderly is Pausable {
         // in case refund someone, refund process is executed
         if (_value > 0) {
             // refund value
-            _transfer(_to, _value);
+            _to.transfer(_value);
+            //_transfer(_to, _value);
         }
         // refund surplus value
         if(targetRequest.fee - _value > 0) {
-            _transfer(owner, targetRequest.fee - _value);
+            _owner.transfer(targetRequest.fee.sub(_value));
+            //_transfer(owner, targetRequest.fee - _value);
         }
         // emit event
         emit RequestDelete(_requestId);
