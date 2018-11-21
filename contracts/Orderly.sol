@@ -43,6 +43,7 @@ contract Orderly is Pausable {
     event RequestState(uint256 requestId, bytes32 requestState);
     event SetAlvcAddress(address alvcAddress);
     event SetAlvcWallet(address alvcWallet);
+    event Withdrawed(address owner);
 
     struct Request { // the data structure for each request
         address requester;

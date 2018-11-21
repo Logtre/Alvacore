@@ -12,6 +12,8 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
     function withdraw() onlyOwner() public {
         //_withdraw();
         owner.transfer(address(this).balance);
+        
+        emit Withdrawed(owner);
     }
 
     function _correctBusiness(bytes32 _keyword) pure internal {
@@ -81,57 +83,57 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
         _cancel(_requestId, _value);
     }
 
-    function deliver(uint256 _requestId, bytes _paramsHash, uint256 _error, uint256 _respData) whenNotPaused() available() public {
-        uint256 _callbackGas = (requests[_requestId].fee - minGas * gasPrice) / txGasPrice; // gas left for the callback function
+    function deliver(int _requestId, bytes _paramsHash, int _error, int _respData) whenNotPaused() available() public {
+        uint256 _callbackGas = (requests[uint256(_requestId)].fee - minGas * gasPrice) / txGasPrice; // gas left for the callback function
         bytes32 _paramsHash32bytes = _convertBytesToBytes32(_paramsHash);
 
         _isALVC(msg.sender);
 
         if (_requestId <= 0 ||
-            _paramsHash32bytes != requests[_requestId].paramsHash) {
+            _paramsHash32bytes != requests[uint256(_requestId)].paramsHash) {
             // error
-            _setRequestState(_requestId, 4);
-        } else if (cancelFlag[_requestId]) {
+            _setRequestState(uint256(_requestId), 4);
+        } else if (cancelFlag[uint256(_requestId)]) {
             // If the request is cancelled by the requester, cancellation
             // fee goes to the SGX account and set the request as having
             // been responded to.
             //_transfer(alvcAddress, cancellationGas.mul(gasPrice));
             alvcAddress.transfer(cancellationGas.mul(gasPrice));
             // canceled
-            _setRequestState(_requestId, 2);
+            _setRequestState(uint256(_requestId), 2);
             return;
         }
 
-        if (_error < 2) {
+        if (uint256(_error) < 2) {
             // Either no error occurs, or the requester sent an invalid query.
             // Send the fee to the SGX account for its delivering.
             //_transfer(alvcAddress, requests[_requestId].fee);
-            alvcAddress.transfer(requests[_requestId].fee);
+            alvcAddress.transfer(requests[uint256(_requestId)].fee);
         } else {
             // Error in TC, refund the requester.
             //_transfer(requests[_requestId].requester, requests[_requestId].fee);
-            requests[_requestId].requester.transfer(requests[_requestId].fee);
+            requests[uint256(_requestId)].requester.transfer(requests[uint256(_requestId)].fee);
 
-            _setRequestState(_requestId, 5);
+            _setRequestState(uint256(_requestId), 5);
         }
 
-        emit DeliverInfo(_requestId, requests[_requestId].fee, tx.gasprice, gasleft(), _callbackGas, _paramsHash32bytes, _error, _respData); // log the response information
+        emit DeliverInfo(uint256(_requestId), requests[uint256(_requestId)].fee, tx.gasprice, gasleft(), _callbackGas, _paramsHash32bytes, uint256(_error), uint256(_respData)); // log the response information
 
         if (_callbackGas > gasleft().div(tx.gasprice) - externalGas) {
             _callbackGas = gasleft().div(tx.gasprice) - externalGas;
         }
 
-        if(!requests[_requestId].requester.call.gas(uint(_callbackGas.mul(gasPrice)))(
-            requests[_requestId].callbackFID,
-            _requestId,
-            _error,
-            _respData)) { // call the callback function in the application contract
+        if(!requests[uint256(_requestId)].requester.call.gas(uint(_callbackGas.mul(gasPrice)))(
+            requests[uint256(_requestId)].callbackFID,
+            uint256(_requestId),
+            uint256(_error),
+            uint256(_respData))) { // call the callback function in the application contract
             revert();
         }
 
-        _setRequestState(_requestId, 1);
+        _setRequestState(uint256(_requestId), 1);
 
-        _deleteRequest(_requestId, alvcAddress, minGas.mul(gasPrice).mul(80).div(100));
+        _deleteRequest(uint256(_requestId), alvcAddress, minGas.mul(gasPrice).mul(80).div(100));
     }
 
 
