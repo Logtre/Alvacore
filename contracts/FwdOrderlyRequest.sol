@@ -1,10 +1,10 @@
 pragma solidity ^0.4.24;
 
-import "https://github.com/Logtre/Alvacore/contracts/Orderly.sol";
-import "https://github.com/Logtre/Alvacore/contracts/FwdCharacteristic.sol";
-import "https://github.com/Logtre/Alvacore/contracts/utils/Utils.sol";
-import "https://github.com/Logtre/Alvacore/contracts/fees/Fees.sol";
-import "https://github.com/Logtre/Alvacore/contracts/math/SafeMath.sol";
+import "./Orderly.sol";
+import "./FwdCharacteristic.sol";
+import "./utils/Utils.sol";
+import "./fees/Fees.sol";
+import "./math/SafeMath.sol";
 
 contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
     using SafeMath for uint256;
@@ -12,7 +12,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
     function withdraw() onlyOwner() public {
         //_withdraw();
         owner.transfer(address(this).balance);
-        
+
         emit Withdrawed(owner);
     }
 

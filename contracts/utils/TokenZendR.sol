@@ -25,7 +25,7 @@ contract TokenZendR is Ownable, Pausable {
     Transfer[] public transactions;
     address public owner;
 
-    mapping(address => unit[]) public transactionIndexesToSender;
+    mapping(address => uint[]) public transactionIndexesToSender;
     mapping(bytes32 => address) public tokens;
 
     constructor() public {

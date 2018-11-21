@@ -1,10 +1,11 @@
 pragma solidity ^0.4.24;
 
-import "https://github.com/Logtre/Alvacore/contracts/lifecycle/Pausable.sol";
-import "https://github.com/Logtre/Alvacore/contracts/FwdOrderlyRequest.sol";
-import "https://github.com/Logtre/Alvacore/contracts/math/SafeMath.sol";
+import "./FwdOrderlyRequest.sol";
+import "./FwdBase.sol";
+import "./math/SafeMath.sol";
 
-contract FwdCont is Pausable {
+
+contract FwdCont is FwdBase {
     using SafeMath for uint256;
 
     /*event ForwardInfo(

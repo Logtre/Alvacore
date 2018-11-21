@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "https://github.com/Logtre/Alvacore/contracts/FwdCont.sol";
+import "./FwdCont.sol";
 
 
 contract FwdContRequest is FwdCont {

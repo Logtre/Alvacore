@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
-import "https://github.com/Logtre/Alvacore/contracts/lifecycle/Pausable.sol";
-import "https://github.com/Logtre/Alvacore/contracts/utils/Utils.sol";
-import "https://github.com/Logtre/Alvacore/contracts/fees/Fees.sol";
-import "https://github.com/Logtre/Alvacore/contracts/math/SafeMath.sol";
+import "./FwdBase.sol";
+import "./utils/Utils.sol";
+import "./fees/Fees.sol";
+import "./math/SafeMath.sol";
 
 
-contract Orderly is Pausable {
+contract Orderly is FwdBase {
     using SafeMath for uint256;
 
     event RequestInfo(

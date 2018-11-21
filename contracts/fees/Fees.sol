@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "https://github.com/Logtre/Alvacore/contracts/math/SafeMath.sol";
+import "../math/SafeMath.sol";
 
 contract Fees {
 

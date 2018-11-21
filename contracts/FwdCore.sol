@@ -1,8 +1,8 @@
 pragma solidity ^0.4.24;
 
-import "https://github.com/Logtre/Alvacore/contracts/FwdContRequest.sol";
-import "https://github.com/Logtre/Alvacore/contracts/FwdContProcess.sol";
-import "https://github.com/Logtre/Alvacore/contracts/fees/Fees.sol";
+import "./FwdContRequest.sol";
+import "./FwdContProcess.sol";
+import "./fees/Fees.sol";
 
 contract FwdCore is FwdContRequest, FwdContProcess, Fees {
     function calculateFxAmtFromId(uint256 _fwdId) orderlyConnected() available() onlyParty(_fwdId) view public returns(uint256) {

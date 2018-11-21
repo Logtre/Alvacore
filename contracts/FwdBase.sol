@@ -1,8 +1,8 @@
 pragma solidity ^0.4.24;
 
-import "https://github.com/Logtre/Alvacore/contracts/ownership/AccessControl.sol";
-//import "https://github.com/Logtre/Alvacore/contracts/ownership/Ownable.sol";
-//import "https://github.com/Logtre/Alvacore/contracts/math/SafeMath.sol";
+import "./ownership/AccessControl.sol";
+//import "../ownership/Ownable.sol";
+//import "../math/SafeMath.sol";
 //import "openzeppelin-solidity/contracts/utils/Address.sol";
 //import "openzeppelin-solidity/contracts/utils/Arrays.sol";
 //import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
@@ -10,7 +10,7 @@ import "https://github.com/Logtre/Alvacore/contracts/ownership/AccessControl.sol
 /**
     Pausable defines lifecycle function
 */
-contract Pausable is AccessControl {
+contract FwdBase is AccessControl {
 
     event Upgrade(address newAddr);
     event Killswitch(bool killswitch);
