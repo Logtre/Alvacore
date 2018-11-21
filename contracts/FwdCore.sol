@@ -2,25 +2,34 @@ pragma solidity ^0.4.24;
 
 import "https://github.com/Logtre/Alvacore/contracts/FwdContRequest.sol";
 import "https://github.com/Logtre/Alvacore/contracts/FwdContProcess.sol";
+import "https://github.com/Logtre/Alvacore/contracts/fees/Fees.sol";
 
-
-contract FwdCore is FwdContRequest, FwdContProcess {
-    function calculateFxAmtFromId(int _fwdId) orderlyConnected() available() onlyParty(_fwdId) view public returns(int) {
+contract FwdCore is FwdContRequest, FwdContProcess, Fees {
+    function calculateFxAmtFromId(uint256 _fwdId) orderlyConnected() available() onlyParty(_fwdId) view public returns(uint256) {
         return _calculateFxAmtFromId(_fwdId);
     }
 
     // Admin Functions
-    function adminSetAllCancel(bool _flag) onlyOwner() public {
+    /*function adminSetAllCancel(bool _flag) onlyOwner() public {
         _setAllCancel(_flag);
-    }
+    }*/
 
-    function adminGetContractBalance() onlyOwner() view public returns(uint) {
+    function adminGetContractBalance() onlyOwner() view public returns(uint256) {
         return address(this).balance;
     }
 
-    function adminGetFlags() onlyOwner() view public returns(bool, int, int, int, bool, int, bool, int, int) {
+    function adminGetFlags() onlyOwner() view public returns(
+        //bool,
+        uint256,
+        uint256,
+        uint256,
+        bool,
+        uint256,
+        bool,
+        uint256,
+        uint256) {
         return(
-            cancelFlag,
+            //cancelFlag,
             CANCELLED_FEE_FLAG,
             DELIVERED_FEE_FLAG,
             FAIL_FLAG,
@@ -32,7 +41,14 @@ contract FwdCore is FwdContRequest, FwdContProcess {
             );
     }
 
-    function adminGetFwdRequest(int _fwdId) onlyOwner() view public returns(bool, bool, int, int, bytes32, int, int) {
+    function adminGetFwdRequest(uint256 _fwdId) onlyOwner() view public returns(
+        bool,
+        bool,
+        uint256,
+        uint256,
+        bytes32,
+        uint256,
+        uint256) {
         return(
             cancelRequestSender[_fwdId],
             cancelRequestReceiver[_fwdId],
@@ -44,7 +60,12 @@ contract FwdCore is FwdContRequest, FwdContProcess {
             );
     }
 
-    function adminGetFees() onlyOwner() view public returns(int, int, int, int, int) {
+    function adminGetFees() onlyOwner() view public returns(
+        uint256,
+        uint256,
+        uint256,
+        uint256,
+        uint256) {
         return (
             gasPrice,
             minGas,
@@ -54,7 +75,13 @@ contract FwdCore is FwdContRequest, FwdContProcess {
             );
     }
 
-    function adminSetFees(int _gasPrice, int _minGas, int _cancellationGas, int _externalGas, int _txGasPrice, int _reqGas) onlyOwner() public {
+    function adminSetFees(
+        uint256 _gasPrice,
+        uint256 _minGas,
+        uint256 _cancellationGas,
+        uint256 _externalGas,
+        uint256 _txGasPrice,
+        uint256 _reqGas) onlyOwner() public {
         _setFees(_gasPrice, _minGas, _cancellationGas, _externalGas, _txGasPrice);
 
         _setReqFee(_reqGas);
@@ -73,43 +100,45 @@ contract FwdCore is FwdContRequest, FwdContProcess {
     }
 
     function adminWithdraw() onlyOwner() public {
-        _withdraw();
+        //_withdraw();
+        owner.transfer(address(this).balance);
+        emit AdminWithdraw(owner, address(this).balance);
     }
 
-    function adminEmergencyCancel(int64 _fwdId) orderlyConnected() available() onlyOwner() public payable {
+    function adminEmergencyCancel(uint256 _fwdId) orderlyConnected() available() onlyOwner() public payable {
 
         _emergencyCancel(_fwdId);
     }
 
     // user functions
     function request (
-        //int _contractDay,
-        int _settlementDuration,
-        int _expireDuration,
+        //uint256 _contractDay,
+        uint256 _settlementDuration,
+        uint256 _expireDuration,
         address _receiverAddr,
         address _senderAddr,
-        int _baseAmt
+        uint256 _baseAmt
         ) available() orderlyConnected() public payable {
 
         _request(_settlementDuration, _expireDuration, _receiverAddr, _senderAddr, _baseAmt);
     }
 
-    function deposit(int _fwdId) orderlyConnected() available() public payable {
+    function deposit(uint256 _fwdId) orderlyConnected() available() public payable {
 
         _deposit(_fwdId);
     }
 
-    function withdrawConfirm(int _fwdId) orderlyConnected() available() public payable {
+    function withdrawConfirm(uint256 _fwdId) orderlyConnected() available() public payable {
 
         _withdrawConfirm(_fwdId);
     }
 
-    function withdraw(int _fwdId) orderlyConnected() available() public {
+    function withdraw(uint256 _fwdId) orderlyConnected() available() public {
         // withdraw depositted asset
         _withdrawFwd(_fwdId);
     }
 
-    function cancel(int64 _fwdId) orderlyConnected() available() onlyParty(_fwdId) public payable {
+    function cancel(uint256 _fwdId) orderlyConnected() available() onlyParty(_fwdId) public payable {
         // set cancelflag
         _setCancelFlag(_fwdId);
         // confirm both cancel flag is established
@@ -121,33 +150,33 @@ contract FwdCore is FwdContRequest, FwdContProcess {
         _cancelFwd(_fwdId);
     }
 
-    function cancelConfirm(int _fwdId) orderlyConnected() available() onlyParty(_fwdId) public payable {
+    function cancelConfirm(uint256 _fwdId) orderlyConnected() available() onlyParty(_fwdId) public payable {
 
         _cancelConfirm(_fwdId);
     }
 
-    function emergencyConfirm(int _fwdId) orderlyConnected() available() public payable {
+    function emergencyConfirm(uint256 _fwdId) orderlyConnected() available() public payable {
 
         _emergencyConfirm(_fwdId);
     }
 
     function response(
-        int _requestId,
-        int _error,
-        int _respData
+        uint256 _requestId,
+        uint256 _error,
+        uint256 _respData
     ) available() orderlyConnected() external {
 
         _response(_requestId, _error, _respData);
     }
 
-    function getFwdRequest(int _fwdId) view public returns(
+    function getFwdRequest(uint256 _fwdId) view public returns(
             address,
-            int,
-            int,
-            int,
+            uint256,
+            uint256,
+            uint256,
             address,
             address,
-            int
+            uint256
         ) {
             return(
                 fwdRequests[_fwdId].fwdOwner,
@@ -160,12 +189,11 @@ contract FwdCore is FwdContRequest, FwdContProcess {
             );
         }
 
-    function getFwdRequestInput(int _fwdId) view public returns(
-            int,
-            int,
+    function getFwdRequestInput(uint256 _fwdId) view public returns(
+            uint256,
+            uint256,
             bytes32,
-            int
-        ) {
+            uint256         ) {
         return(
             fwdDeposits[_fwdId],
             fwdIndexToFees[_fwdId],

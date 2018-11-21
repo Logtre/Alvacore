@@ -59,7 +59,6 @@ contract FwdCont is Pausable {
         bytes32 fwdState
     );
 
-
     event FwdCancel(uint256 fwdId, address canceller, uint256 flag);
     event FwdDelete(uint256 fwdId);
     event SetFwdState(uint256 fwdId, bytes32 fwdState);
@@ -67,6 +66,7 @@ contract FwdCont is Pausable {
     event SetFxRate(uint256 fwdId, uint256 fxRate);
     event WithdrawDeposit(uint256 fwdId, address withdrawer, uint256 amount);
     event OutOfDeposit(uint256 fwdId, address sender, uint256 AdditionalCertificate);
+    event AdminWithdraw(address owner, uint256 amount);
 
     struct FwdRequestInfo { // the data struct for forward contract
         address fwdOwner;
