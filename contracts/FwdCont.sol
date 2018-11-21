@@ -29,6 +29,7 @@ contract FwdCont is Pausable {
     ); // log for requests*/
 
     event FwdRequest(
+        uint256 fwdId,
         address fwdOwner,
         bytes32 fwdState,
         uint256 contractDay,
@@ -181,7 +182,7 @@ contract FwdCont is Pausable {
 
         _addFwdRequest(_fwdCnt, fwdRequest, _requestId, _reqFee);
 
-        emit FwdRequest(_fwdOwner, fwdStates[0], _contractDay, _settlementDuration, _expireDuration, _receiverAddr, _senderAddr, _baseAmt);
+        emit FwdRequest(_fwdCnt, _fwdOwner, fwdStates[0], _contractDay, _settlementDuration, _expireDuration, _receiverAddr, _senderAddr, _baseAmt);
         emit SetFwdFee(fwdIndexToFees[_fwdCnt]);
 
         return _fwdCnt;

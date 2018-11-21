@@ -5,11 +5,11 @@ import "https://github.com/Logtre/Alvacore/contracts/FwdCont.sol";
 
 contract FwdContProcess is FwdCont {
 
-    function _cancelFwd(int64 _fwdId) internal {
+    function _cancelFwd(uint256 _fwdId) internal {
         // fwdState = confirmCancel
         _checkState(_fwdId, 5);
 
-        if (int(msg.value) + fwdIndexToFees[_fwdId] >= minGas * gasPrice) {
+        if (msg.value + fwdIndexToFees[_fwdId] >= minGas * gasPrice) {
             // If the request was sent by this user and has money left on it,
             // then cancel it.
             if (fwdDeposits[_fwdId] > 0) {
@@ -34,11 +34,11 @@ contract FwdContProcess is FwdCont {
         }
     }
 
-    function _emergencyCancel(int64 _fwdId) internal {
+    function _emergencyCancel(uint256 _fwdId) internal {
         // fwdState = confirmEmergency
         _checkState(_fwdId, 7);
 
-        if (int(msg.value) + fwdIndexToFees[_fwdId] >= minGas * gasPrice) {
+        if (msg.value + fwdIndexToFees[_fwdId] >= minGas * gasPrice) {
             // If the request was sent by this user and has money left on it,
             // then cancel it.
             if(fwdDeposits[_fwdId] > 0) {
@@ -62,7 +62,7 @@ contract FwdContProcess is FwdCont {
         }
     }
 
-    function _withdrawFwd(int _fwdId) internal {
+    function _withdrawFwd(uint256 _fwdId) internal {
         // if now time greater than settlementDay,
         // function can execute
         _availSettlement(_fwdId);
@@ -84,41 +84,41 @@ contract FwdContProcess is FwdCont {
         }
     }
 
-    function _deposit(int _fwdId) internal {
+    function _deposit(uint256 _fwdId) internal {
 
         _isSender(_fwdId);
 
-        if (int(msg.value) < _calculateFxAmt(fwdRequests[_fwdId].baseAmt, fwdIndexToFxRate[_fwdId])) {
+        if (msg.value < _calculateFxAmt(fwdRequests[_fwdId].baseAmt, fwdIndexToFxRate[_fwdId])) {
             // insufficient fee
             // revert
             revert();
         } else {
             // create deposit
-            fwdDeposits[_fwdId] = int(msg.value);
+            fwdDeposits[_fwdId] = msg.value;
             // update fwdState
             _setFwdState(_fwdId, 2);
             // update fee
             _setFwdFee(_fwdId, fwdIndexToFees[_fwdId] - minGas * gasPrice);
 
-            emit Deposit(_fwdId, int(fwdDeposits[_fwdId]), fwdIndexToFwdState[_fwdId], int(fwdIndexToFees[_fwdId]));
+            emit FwdDeposit(_fwdId, fwdDeposits[_fwdId], fwdIndexToFwdState[_fwdId], fwdIndexToFees[_fwdId]);
         }
     }
 
-    function _withdrawConfirm(int _fwdId) internal {
+    function _withdrawConfirm(uint256 _fwdId) internal {
         // only sender can execute
         _isSender(_fwdId);
         // fwdState = setDeposit
         _checkState(_fwdId, 2);
 
-        if (int(msg.value) + fwdIndexToFees[_fwdId] > minGas * gasPrice) {
+        if (msg.value + fwdIndexToFees[_fwdId] > minGas * gasPrice) {
             // confirmWithdraw
             _setFwdState(_fwdId, 3);
             // update fee balance
-            _setFwdFee(_fwdId, int(msg.value) + fwdIndexToFees[_fwdId] - minGas * gasPrice);
+            _setFwdFee(_fwdId, msg.value + fwdIndexToFees[_fwdId] - minGas * gasPrice);
         }
     }
 
-    function _setCancelFlag(int _fwdId) internal {
+    function _setCancelFlag(uint256 _fwdId) internal {
         if (msg.sender == fwdRequests[_fwdId].receiverAddr) {
             cancelRequestReceiver[_fwdId] = true;
         }
@@ -128,21 +128,21 @@ contract FwdContProcess is FwdCont {
         }
     }
 
-    function _cancelConfirm(int _fwdId) internal {
+    function _cancelConfirm(uint256 _fwdId) internal {
         // set cancelflag
         _setCancelFlag(_fwdId);
         // confirmCancel
         _setFwdState(_fwdId, 5);
 
-        _setFwdFee(_fwdId, int(msg.value) + fwdIndexToFees[_fwdId] - minGas * gasPrice);
+        _setFwdFee(_fwdId, msg.value + fwdIndexToFees[_fwdId] - minGas * gasPrice);
     }
 
-    function _emergencyConfirm(int _fwdId) internal {
+    function _emergencyConfirm(uint256 _fwdId) internal {
         // only sender can execute
         _isSender(_fwdId);
         // confirmCancel
         _setFwdState(_fwdId, 7);
 
-        _setFwdFee(_fwdId, int(msg.value) + fwdIndexToFees[_fwdId] - minGas * gasPrice);
+        _setFwdFee(_fwdId, msg.value + fwdIndexToFees[_fwdId] - minGas * gasPrice);
     }
 }
