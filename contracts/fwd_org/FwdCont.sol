@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./FwdOrderlyRequest.sol";
 import "./FwdBase.sol";
-import "./math/SafeMath.sol";
+import "../math/SafeMath.sol";
 
 
 contract FwdCont is FwdBase {
@@ -68,6 +68,7 @@ contract FwdCont is FwdBase {
     event WithdrawDeposit(uint256 fwdId, address withdrawer, uint256 amount);
     event OutOfDeposit(uint256 fwdId, address sender, uint256 AdditionalCertificate);
     event AdminWithdraw(address owner, uint256 amount);
+    event SetOrderly(address orddrlyCont);
 
     struct FwdRequestInfo { // the data struct for forward contract
         address fwdOwner;
@@ -184,7 +185,7 @@ contract FwdCont is FwdBase {
         _addFwdRequest(_fwdCnt, fwdRequest, _requestId, _reqFee);
 
         emit FwdRequest(_fwdCnt, _fwdOwner, fwdStates[0], _contractDay, _settlementDuration, _expireDuration, _receiverAddr, _senderAddr, _baseAmt);
-        emit SetFwdFee(fwdIndexToFees[_fwdCnt]);
+        //emit SetFwdFee(fwdIndexToFees[_fwdCnt]);
 
         return _fwdCnt;
     }
@@ -197,6 +198,8 @@ contract FwdCont is FwdBase {
         requestOrderly = FwdOrderlyRequest(_requestOrderly);
 
         setOrderly = true;
+
+        emit SetOrderly(_requestOrderly);
     }
 
     function _cancel(uint256 _fwdId) internal {

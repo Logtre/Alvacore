@@ -32,7 +32,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
 
         _correctBusiness(_requestType);
 
-        if (uint256(msg.value) < minGas.mul(gasPrice)) {
+        if (msg.value < minGas.mul(gasPrice)) {
             //emit CheckFee(msg.value, minGas * gasPrice, msg.sender);
             //_externalCall(msg.sender, msg.value);
             //return FAIL_FLAG;
@@ -40,7 +40,7 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
         } else {
             uint256 requestId = _createRequest(
                 _requester,
-                uint256(msg.value),
+                msg.value,
                 _callbackFID,
                 keccak256(abi.encodePacked(_requestType, _requestData)),
                 _timestamp,
@@ -137,12 +137,14 @@ contract FwdOrderlyRequest is Orderly, FwdCharacteristic, Utils, Fees {
     }
 
 
-    function setAlvcWallet(address _newAlvcWallet) onlyOwner() public {
+    function setAlvcWallet(address _newAlvcWallet) onlyOwner() public returns(address) {
         _setAlvcWallet(_newAlvcWallet);
+        return alvcWallet;
     }
 
-    function setAlvcAddress(address _newAlvcAddress) onlyOwner() public {
+    function setAlvcAddress(address _newAlvcAddress) onlyOwner() public returns(address) {
         _setAlvcAddress(_newAlvcAddress);
+        return alvcAddress;
     }
 
     function setFees(uint256 _gasPrice, uint256 _minGas, uint256 _cancellationGas, uint256 _externalGas, uint256 _txGasPrice) onlyOwner() public {

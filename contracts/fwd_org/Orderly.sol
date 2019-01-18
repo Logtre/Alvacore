@@ -1,9 +1,9 @@
 pragma solidity ^0.4.24;
 
 import "./FwdBase.sol";
-import "./utils/Utils.sol";
-import "./fees/Fees.sol";
-import "./math/SafeMath.sol";
+import "../utils/Utils.sol";
+import "../fees/Fees.sol";
+import "../math/SafeMath.sol";
 
 
 contract Orderly is FwdBase {
@@ -16,7 +16,7 @@ contract Orderly is FwdBase {
         uint256 fee,
         bytes32 paramsHash,
         uint256 timestamp,
-        bytes32 _requestState,
+        bytes32 requestState,
         bytes32 requestData
     ); // log of requests, the Town Crier server watches this event and processes requests
     event DeliverInfo(
@@ -82,7 +82,7 @@ contract Orderly is FwdBase {
         //      so this means the first request isn't randomly more expensive.
         _createRequest(msg.sender, 0, "", "", uint256(now), "", 0);
         //requestCnt = 1;
-    owner = msg.sender;
+        owner = msg.sender;
         killswitch = false;
         //cancelFlag = false;
         unrespondedCnt = 0;

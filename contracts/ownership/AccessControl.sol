@@ -6,7 +6,7 @@ pragma solidity ^0.4.24;
 */
 contract AccessControl {
 
-    address internal owner;
+    address public owner;
 
     bool public paused = false;
     /**

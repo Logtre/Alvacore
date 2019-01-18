@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "./ownership/AccessControl.sol";
+import "../ownership/AccessControl.sol";
 //import "../ownership/Ownable.sol";
 //import "../math/SafeMath.sol";
 //import "openzeppelin-solidity/contracts/utils/Address.sol";
@@ -14,6 +14,7 @@ contract FwdBase is AccessControl {
 
     event Upgrade(address newAddr);
     event Killswitch(bool killswitch);
+    event UnrespondedCnt(uint256 unrespondedCnt);
 
     uint256 internal minGas = 300000;
     uint256 internal gasPrice = 5 * 10**10;
@@ -23,7 +24,7 @@ contract FwdBase is AccessControl {
 
     uint256 internal constant CANCELLED_FEE_FLAG = 1;
     uint256 internal constant DELIVERED_FEE_FLAG = 0;
-    uint256 internal constant FAIL_FLAG = -2 ** 250;
+    uint256 internal constant FAIL_FLAG = 0;
     uint256 internal constant SUCCESS_FLAG = 1;
 
     bool public killswitch;
@@ -94,6 +95,7 @@ contract FwdBase is AccessControl {
     function _restart() internal {
         if (newVersion == 0) {
             killswitch = false;
+            emit Killswitch(killswitch);
         }
     }
 
@@ -102,6 +104,7 @@ contract FwdBase is AccessControl {
     */
     function _resetKillswitch() internal {
         killswitch = false;
+        emit Killswitch(killswitch);
     }
 
     /**
@@ -109,6 +112,7 @@ contract FwdBase is AccessControl {
     */
     function _resetUnrespond() internal {
         unrespondedCnt = 0;
+        emit UnrespondedCnt(unrespondedCnt);
     }
 
     /**
@@ -116,6 +120,7 @@ contract FwdBase is AccessControl {
     */
     function _setNewVersion(address _newAddr) internal {
         newVersion = uint256(_newAddr);
+        emit Upgrade(_newAddr);
     }
 
     /**
