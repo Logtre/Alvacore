@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../ownership/AccessControl.sol";
+import "./ownership/AccessControl.sol";
 //import "../ownership/Ownable.sol";
 //import "../math/SafeMath.sol";
 //import "openzeppelin-solidity/contracts/utils/Address.sol";
@@ -14,14 +14,8 @@ contract FwdBase is AccessControl {
 
     event Upgrade(address newAddr);
     event Killswitch(bool killswitch);
-    event UnrespondedCnt(uint256 unrespondedCnt);
 
     uint256 public processFee = 2 finney;
-    /*uint256 internal minGas = 300000;
-    uint256 internal gasPrice = 5 * 10**10;
-    uint256 internal cancellationGas = 250000; // charged when the requester cancels a request that is not responded
-    uint256 internal externalGas = 50000;
-    uint256 internal txGasPrice = 10; //10Wei for Rinkeby*/
 
     uint256 internal constant CANCELLED_FEE_FLAG = 1;
     uint256 internal constant DELIVERED_FEE_FLAG = 0;
@@ -29,8 +23,6 @@ contract FwdBase is AccessControl {
     uint256 internal constant SUCCESS_FLAG = 1;
 
     bool public killswitch;
-    //bool public cancelFlag;
-    //uint256 internal unrespondedCnt;
     uint256 public newVersion;
 
     /**
@@ -71,7 +63,7 @@ contract FwdBase is AccessControl {
     constructor() public {
         killswitch = false;
         //cancelFlag = false;
-        unrespondedCnt = 0;
+        //unrespondedCnt = 0;
         newVersion = 0;
     }
 
@@ -87,7 +79,7 @@ contract FwdBase is AccessControl {
     /**
         @dev _upgrade change contract's version.
 
-        @param _newAddress  address of new contract
+        @param _newAddr  address of new contract
     */
     function _upgrade(address _newAddr) internal {
         newVersion = uint256(_newAddr);
@@ -114,17 +106,9 @@ contract FwdBase is AccessControl {
     }
 
     /**
-        @dev _resetUnrespond release unrespondedCnt.
-    */
-    function _resetUnrespond() internal {
-        unrespondedCnt = 0;
-        emit UnrespondedCnt(unrespondedCnt);
-    }
-
-    /**
         @dev _setNewVersion set newVersion flag.
 
-        @param _newAddress  address of new contract
+        @param _newAddr  address of new contract
     */
     function _setNewVersion(address _newAddr) internal {
         newVersion = uint256(_newAddr);
