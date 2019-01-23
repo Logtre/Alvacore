@@ -6,70 +6,108 @@ import "./FwdContProcess.sol";
 
 contract FwdCore is FwdContProcess {
 
+    /**
+        @dev    get all fwd balance
+    */
     function adminGetContractBalance() onlyOwner() view public returns(uint256) {
         return address(this).balance;
     }
 
+    /**
+        @dev    check contract's flag
+    */
     function adminGetFlags() onlyOwner() view public returns(
-        uint256,
-        uint256,
-        uint256,
+        //uint256,
+        //uint256,
+        //uint256,
         bool,
         uint256,
-        bool,
-        uint256){
+        bool) {
+        //uint256){
         return(
-            CANCELLED_FEE_FLAG,
-            DELIVERED_FEE_FLAG,
-            FAIL_FLAG,
+            //CANCELLED_FEE_FLAG,
+            //DELIVERED_FEE_FLAG,
+            //FAIL_FLAG,
             killswitch,
             newVersion,
-            paused,
-            SUCCESS_FLAG
+            paused
+            //SUCCESS_FLAG
             );
     }
 
-    function adminGetFwdRequest(uint256 _fwdId) onlyOwner() view public returns(
+    /**
+        @dev    get specific fwd financial information
+        @param  _fwdId  fwd id
+    */
+    function adminGetFwdInfo(uint256 _fwdId) onlyOwner() view public returns(
         bool,
         bool,
+        uint256,
+        bytes32,
         uint256,
         bytes32) {
         return(
             cancelRequestSender[_fwdId],
             cancelRequestReceiver[_fwdId],
             fwdDeposits[_fwdId],
-            fwdIndexToFwdState[_fwdId]);
+            fwdIndexToFwdState[_fwdId],
+            fwdHedges[_fwdId],
+            fwdIndexToHedgeState[_fwdId]);
     }
 
+    /**
+        @dev    get process fee
+    */
     function adminGetFees() onlyOwner() view public returns(uint256) {
         return (processFee);
     }
 
-    function adminSetFees(
-        uint256 _processFee) onlyOwner() public {
+    /**
+        @dev    set contract's fee
+        @param  _processFee amount of fee
+    */
+    function adminSetFees(uint256 _processFee) onlyOwner() public {
         _setFees(_processFee);
     }
 
+    /**
+        @dev    reset killswitch
+    */
     function adminResetKillswitch() onlyOwner() public {
         _resetKillswitch();
     }
 
+    /**
+        @dev    set newversion flag
+    */
     function adminSetNewVersion(address _newAddr) onlyOwner() public {
         _setNewVersion(_newAddr);
     }
 
+    /**
+        @dev    withdraw pooled contract's balance
+    */
     function adminWithdraw() onlyOwner() public {
         //_withdraw();
         owner.transfer(address(this).balance);
         emit AdminWithdrawFwd(owner, address(this).balance);
     }
 
+    /**
+        @dev    emergency cancel
+        @param  _fwdId  fwd id
+    */
     function adminEmergencyCancel(uint256 _fwdId) available() onlyOwner() public payable {
-
+        // emergency operation
         _emergencyCancel(_fwdId);
     }
 
-    // user functions
+    /**
+        @dev    execute request operation
+        @param  _settlementDuration duration untill settlementDay
+        @param  _receiverAddr       receiver's address
+        @param  _senderAddr         sender's address
+    */
     function request (
         //uint256 _contractDay,
         uint256 _settlementDuration,
@@ -78,30 +116,51 @@ contract FwdCore is FwdContProcess {
         address _senderAddr
         //uint256 _baseAmt
         ) available() public payable {
-
+        // request operation
         _createFwd(msg.sender, now, _settlementDuration, _receiverAddr, _senderAddr, fwdCnt);
     }
 
+    /**
+        @dev    execute deposit operation
+        @param  _fwdId  fwd id
+    */
     function deposit(uint256 _fwdId) available() public payable {
-
+        // deposit operation
         _deposit(_fwdId);
     }
 
+    /**
+        @dev    execute hedge operation
+        @param  _fwdId  fwd id
+    */
     function hedge(uint256 _fwdId) available() public payable {
-
+        // hedge operation
         _hedge(_fwdId);
     }
 
+    /**
+        @dev    confirm linked fwd
+        @param  _fwdId  fwd id
+    */
     function confirmWithdraw(uint256 _fwdId) available() public payable {
-
+        // confirm operation
         _confirmWithdraw(_fwdId);
     }
 
+    /**
+        @dev    withdraw depositted asset
+        @param  _fwdId  fwd id
+    */
     function withdraw(uint256 _fwdId) available() public {
         // withdraw depositted asset
         _withdraw(_fwdId);
     }
 
+    /**
+        @dev    emit cancel request
+        @param  _fwdId          fwd id
+        @param  _reasonIndex    index number linked with cancelReasons list
+    */
     function cancelRequest(uint256 _fwdId, uint256 _reasonIndex) available() onlyParty(_fwdId) public payable {
         // confirm both cancel flag is established
         require(cancelRequestSender[_fwdId] == true && cancelRequestReceiver[_fwdId] == true);
@@ -109,19 +168,33 @@ contract FwdCore is FwdContProcess {
         if (fwdIndexToFwdState[_fwdId] == fwdStates[0]) {
             _deleteFwd(_fwdId);
         }
+        // cancel request operation
         _cancelRequestFwd(_fwdId, _reasonIndex);
     }
 
+    /**
+        @dev    cancel fwd
+        @param  _fwdId   fwd id
+    */
     function cancel(uint256 _fwdId) available() onlyParty(_fwdId) public payable {
-
+        // cancel operation
         _cancel(_fwdId);
     }
 
+    /**
+        @dev    emit emergency request
+        @param  _fwdId          fwd id
+        @param  _reasonIndex    index number linked with cancelReasons list
+    */
     function emergencyRequest(uint256 _fwdId, uint256 _reasonIndex) available() public payable {
-
+        // emergency request operation
         _emergencyRequestFwd(_fwdId, _reasonIndex);
     }
 
+    /**
+        @dev    get fwd non-financial information
+        @param  _fwdId   fwd id
+    */
     function getFwdRequest(uint256 _fwdId) view public returns(
             address,
             uint256,
@@ -137,12 +210,20 @@ contract FwdCore is FwdContProcess {
             );
         }
 
-    function getFwdRequestInput(uint256 _fwdId) view public returns(
+        /**
+            @dev    get fwd financial info
+            @param  _fwdId   fwd id
+        */
+    function getFwdInfo(uint256 _fwdId) view onlyParty(_fwdId) public returns(
+            uint256,
+            bytes32,
             uint256,
             bytes32) {
         return(
             fwdDeposits[_fwdId],
-            fwdIndexToFwdState[_fwdId]
+            fwdIndexToFwdState[_fwdId],
+            fwdHedges[_fwdId],
+            fwdIndexToHedgeState[_fwdId]
         );
     }
 }
