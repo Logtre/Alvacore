@@ -115,7 +115,7 @@ contract FwdCore is FwdContProcess {
         address _receiverAddr,
         address _senderAddr
         //uint256 _baseAmt
-        ) available() public payable {
+        ) available() public returns(uint256) {
         // request operation
         _createFwd(msg.sender, now, _settlementDuration, _receiverAddr, _senderAddr, fwdCnt);
     }
@@ -124,7 +124,7 @@ contract FwdCore is FwdContProcess {
         @dev    execute deposit operation
         @param  _fwdId  fwd id
     */
-    function deposit(uint256 _fwdId) available() public payable {
+    function deposit(uint256 _fwdId) available() public payable returns(uint256) {
         // deposit operation
         _deposit(_fwdId);
     }
@@ -133,7 +133,7 @@ contract FwdCore is FwdContProcess {
         @dev    execute hedge operation
         @param  _fwdId  fwd id
     */
-    function hedge(uint256 _fwdId) available() public payable {
+    function hedge(uint256 _fwdId) available() public {
         // hedge operation
         _hedge(_fwdId);
     }
@@ -142,7 +142,7 @@ contract FwdCore is FwdContProcess {
         @dev    confirm linked fwd
         @param  _fwdId  fwd id
     */
-    function confirmWithdraw(uint256 _fwdId) available() public payable {
+    function confirmWithdraw(uint256 _fwdId) available() public {
         // confirm operation
         _confirmWithdraw(_fwdId);
     }
@@ -161,7 +161,7 @@ contract FwdCore is FwdContProcess {
         @param  _fwdId          fwd id
         @param  _reasonIndex    index number linked with cancelReasons list
     */
-    function cancelRequest(uint256 _fwdId, uint256 _reasonIndex) available() onlyParty(_fwdId) public payable {
+    function cancelRequest(uint256 _fwdId, uint256 _reasonIndex) available() onlyParty(_fwdId) public {
         // confirm both cancel flag is established
         require(cancelRequestSender[_fwdId] == true && cancelRequestReceiver[_fwdId] == true);
         // if fxRate is not fetch yet, refund fee.
@@ -176,7 +176,7 @@ contract FwdCore is FwdContProcess {
         @dev    cancel fwd
         @param  _fwdId   fwd id
     */
-    function cancel(uint256 _fwdId) available() onlyParty(_fwdId) public payable {
+    function cancel(uint256 _fwdId) available() onlyParty(_fwdId) public {
         // cancel operation
         _cancel(_fwdId);
     }
@@ -186,7 +186,7 @@ contract FwdCore is FwdContProcess {
         @param  _fwdId          fwd id
         @param  _reasonIndex    index number linked with cancelReasons list
     */
-    function emergencyRequest(uint256 _fwdId, uint256 _reasonIndex) available() public payable {
+    function emergencyRequest(uint256 _fwdId, uint256 _reasonIndex) available() public {
         // emergency request operation
         _emergencyRequestFwd(_fwdId, _reasonIndex);
     }

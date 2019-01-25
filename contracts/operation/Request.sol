@@ -93,7 +93,7 @@ contract Request is FwdCont, Fees {
         fwdDeposits[_fwdId] = 0;
         cancelRequestSender[_fwdId] = false;
         cancelRequestReceiver[_fwdId] = false;
-        fwdCnt ++;
+        fwdCnt++;
     }
 
     /**
@@ -115,7 +115,7 @@ contract Request is FwdCont, Fees {
         ) internal returns(uint256) {
 
         FwdRequest memory fwdRequest = FwdRequest({
-            fwdOwner: msg.sender, // the owner of fwd[0] is owner of contract
+            fwdOwner: _fwdOwner, // the owner of fwd[0] is owner of contract
             contractDay: _contractDay, // the date when conclude the trade contract
             settlementDuration: _settlementDuration, // the date when money will be moved
             receiverAddr: _receiverAddr, // the address whose owner will receive money
@@ -132,12 +132,12 @@ contract Request is FwdCont, Fees {
 
         emit AddFwd(
             _fwdCnt, // fwdId
-            _fwdOwner,
+            fwdRequests[_fwdCnt].fwdOwner, // fwdOwner
             fwdStates[0], // requesting
-            _contractDay,
-            _settlementDuration,
-            _receiverAddr,
-            _senderAddr
+            fwdRequests[_fwdCnt].contractDay,
+            fwdRequests[_fwdCnt].settlementDuration,
+            fwdRequests[_fwdCnt].receiverAddr,
+            fwdRequests[_fwdCnt].senderAddr
         );
 
         return _fwdCnt; // _fwdCnt is use as fwdId
