@@ -45,6 +45,7 @@ contract FwdCore is FwdContProcess {
         uint256,
         bytes32,
         uint256,
+        bytes32,
         bytes32) {
         return(
             cancelRequestSender[_fwdId],
@@ -52,7 +53,8 @@ contract FwdCore is FwdContProcess {
             fwdDeposits[_fwdId],
             fwdIndexToFwdState[_fwdId],
             fwdHedges[_fwdId],
-            fwdIndexToHedgeState[_fwdId]);
+            fwdIndexToHedgeState[_fwdId],
+            fwdIndexToHedgeSign[_fwdId]);
     }
 
     /**
@@ -94,6 +96,15 @@ contract FwdCore is FwdContProcess {
     }
 
     /**
+        @dev    supply amount to contract
+        @param  _supplyAmt amount of supply
+    */
+    function adminSupplyBalance(uint256 _supplyAmt) onlyOwner() payable public {
+        address(this).transfer(_supplyAmt);
+        emit AdminSupplyBalance(owner, address(this).balance);
+    }
+
+    /**
         @dev    emergency cancel
         @param  _fwdId  fwd id
     */
@@ -124,7 +135,7 @@ contract FwdCore is FwdContProcess {
         @dev    execute deposit operation
         @param  _fwdId  fwd id
     */
-    function deposit(uint256 _fwdId) available() public payable returns(uint256) {
+    function deposit(uint256 _fwdId) available() noHedge(_fwdId) public payable returns(uint256) {
         // deposit operation
         _deposit(_fwdId);
     }
@@ -133,9 +144,29 @@ contract FwdCore is FwdContProcess {
         @dev    execute hedge operation
         @param  _fwdId  fwd id
     */
-    function hedge(uint256 _fwdId) available() public {
+    function hedge(uint256 _fwdId) available() onlyOwner() public {
         // hedge operation
         _hedge(_fwdId);
+    }
+
+    /**
+        @dev    confirm hedge amount
+        @param  _fwdId      fwd id
+        @param  _hedgeAmt   absolute amount of reprenish
+        @param  _signIndex  index of sign(1: positive, 2: negative)
+    */
+    function confirmHedge(uint256 _fwdId, uint256 _hedgeAmt, uint256 _signIndex) available() onlyOwner() public {
+        // hedge operation
+        _confirmHedge(_fwdId, _hedgeAmt, _signIndex);
+    }
+
+    /**
+        @dev    confirm hedge amount
+        @param  _fwdId      fwd id
+    */
+    function replenish(uint256 _fwdId) available() onlyOwner() public {
+        // replenish operation
+        _replenishHedge(_fwdId);
     }
 
     /**
@@ -154,6 +185,8 @@ contract FwdCore is FwdContProcess {
     function withdraw(uint256 _fwdId) available() public {
         // withdraw depositted asset
         _withdraw(_fwdId);
+        // delete storage
+        _deleteHedge(_fwdId);
     }
 
     /**
@@ -218,12 +251,14 @@ contract FwdCore is FwdContProcess {
             uint256,
             bytes32,
             uint256,
+            bytes32,
             bytes32) {
         return(
             fwdDeposits[_fwdId],
             fwdIndexToFwdState[_fwdId],
             fwdHedges[_fwdId],
-            fwdIndexToHedgeState[_fwdId]
+            fwdIndexToHedgeState[_fwdId],
+            fwdIndexToHedgeSign[_fwdId]
         );
     }
 }

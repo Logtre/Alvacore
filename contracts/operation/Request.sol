@@ -80,6 +80,8 @@ contract Request is FwdCont, Fees {
             address(0), // senderAddr
             0 // FwdCont
         );
+
+        owner = msg.sender; // set contract's owner
     }
 
     /**
@@ -116,7 +118,7 @@ contract Request is FwdCont, Fees {
 
         // check wether settlementDuration is effective or not.
         _effectiveDuration(_settlementDuration);
-        
+
         FwdRequest memory fwdRequest = FwdRequest({
             fwdOwner: _fwdOwner, // the owner of fwd[0] is owner of contract
             contractDay: _contractDay, // the date when conclude the trade contract
@@ -131,7 +133,16 @@ contract Request is FwdCont, Fees {
         );
 
         // set fwdIndexToHedgeState as 'unstarted'
-        fwdIndexToHedgeState[_fwdCnt] = hedgeStates[0];
+        _setHedgeState(
+            _fwdCnt, // fwdCnt is use as fwdId
+            0 // index of 'unstarted'
+        );
+
+        // set fwdIndexToHedgeSign as 'neutral'
+        _setHedgeSign(
+            _fwdCnt, // fwdCnt is use as fwdId
+            0 // index of 'neutral'
+        );
 
         emit AddFwd(
             _fwdCnt, // fwdId
@@ -152,9 +163,9 @@ contract Request is FwdCont, Fees {
     */
     function _depositFwd(uint256 _fwdId) internal {
         // if deposit amount is larger than 0, deposit will successful.
-        if (msg.value > 0) {
+        if (msg.value > processFee) {
             // set deposit
-            fwdDeposits[_fwdId] = msg.value;
+            fwdDeposits[_fwdId] += msg.value;
         } else {
             revert();
         }

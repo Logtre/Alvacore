@@ -35,7 +35,8 @@ contract Hedge is FwdCont, Fees {
     event ReplenishFwd(
         uint256 fwdId,
         uint256 replenishAmount,
-        bytes32 hedgeState
+        bytes32 hedgeState,
+        bytes32 hedgeSign
     );
 
     /**
@@ -47,7 +48,7 @@ contract Hedge is FwdCont, Fees {
         // set fwdIndexToHedgeState as 'pending'
         _setHedgeState(_fwdId, 1);
         // set fwdHedges as fwdDeposit
-        fwdHedges[_fwdId] = fwdDeposits[_fwdId];
+        fwdHedges[_fwdId] = 0;
         // emit event
         emit HedgeFwd(_fwdId, fwdHedges[_fwdId], fwdIndexToHedgeState[_fwdId]);
     }
@@ -58,11 +59,13 @@ contract Hedge is FwdCont, Fees {
         @param  _fwdId      fwd id
         @param  _hedgeAmt   confirmed hedge amount
     */
-    function _confirmHedge(uint256 _fwdId, uint256 _hedgeAmt) internal {
+    function _confirmHedge(uint256 _fwdId, uint256 _hedgeAmt, uint256 _signIndex) internal {
         // confirm wether today is after settlementDay
         _availSettlement(_fwdId);
         // set fwdIndexToHedgeState as 'confirm'
         _setHedgeState(_fwdId, 2);
+        // set fwdIndexToHedgeSign as 'positive' or 'negative'
+        _setHedgeSign(_fwdId, _signIndex);
         // set fwdHedges as specific amount
         fwdHedges[_fwdId] = _hedgeAmt;
         // emit event
@@ -91,16 +94,26 @@ contract Hedge is FwdCont, Fees {
         @param  _fwdId  fwd id
     */
     function _replenishHedge(uint256 _fwdId) internal {
+        if (fwdIndexToHedgeSign[_fwdId] == hedgeSign[1]) { // hedge amount is positive
+            // replenish
+            fwdDeposits[_fwdId] = fwdDeposits[_fwdId].add(fwdHedges[_fwdId]);
+        } else if (fwdIndexToHedgeSign[_fwdId] == hedgeSign[2]) { // hedge amount is negative
+            // replenish
+            fwdDeposits[_fwdId] = fwdDeposits[_fwdId].sub(fwdHedges[_fwdId]);
+        }
+
         // replenish
-        fwdDeposits[_fwdId] = fwdDeposits[_fwdId].add(fwdHedges[_fwdId]);
+        //fwdDeposits[_fwdId] = fwdDeposits[_fwdId].add(fwdHedges[_fwdId]);
         // update hedgeState as 'conplete'
         _setHedgeState(_fwdId, 3);
         // escape hedgeState to temp valiable
-        bytes32 hs = fwdIndexToHedgeState[_fwdId];
+        bytes32 state = fwdIndexToHedgeState[_fwdId];
+        // escape hedgeSign to temp valiable
+        bytes32 sign = fwdIndexToHedgeSign[_fwdId];
         // delete storage
-        _deleteHedge(_fwdId);
+        //_deleteHedge(_fwdId);
         // emit event
-        emit ReplenishFwd(_fwdId, fwdDeposits[_fwdId], hs);
+        emit ReplenishFwd(_fwdId, fwdDeposits[_fwdId], state, sign);
     }
 
     /**

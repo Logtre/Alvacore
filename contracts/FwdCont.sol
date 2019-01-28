@@ -14,9 +14,15 @@ contract FwdCont is FwdBase {
         uint256 amount
     );
 
+    event AdminSupplyBalance(
+        address owner,
+        uint256 amount
+    );
+
     mapping (uint256 => FwdRequest) internal fwdRequests; // the mapping to link fwdId and FwdCont (key:fwdID)
     mapping (uint256 => bytes32) internal fwdIndexToFwdState; // the mapping to link fwdId and fwdState (key:fwdID)
-    mapping (uint256 => bytes32) internal fwdIndexToHedgeState; // the mapping to link fwdId and hedgeState (Key:fwdID)
+    mapping (uint256 => bytes32) internal fwdIndexToHedgeState; // the mapping to link fwdId and hedgeState (key:fwdID)
+    mapping (uint256 => bytes32) internal fwdIndexToHedgeSign; // the mapping to link fwdId and hedgeSign (key:fwdID)
     mapping (uint256 => uint256) internal fwdDeposits; // the mapping to link fwdId and depositAmt (key:fwdID)
     mapping (uint256 => uint256) internal fwdHedges; // the mapping to link fwdId and hedge (key:fwdID)
 
@@ -63,10 +69,17 @@ contract FwdCont is FwdBase {
         bytes32("canceled")
     ];
 
+    bytes32[] internal hedgeSign = [
+        bytes32("neutral"),
+        bytes32("positive"),
+        bytes32("negative")
+    ];
+
     uint256 internal fwdCnt;
 
     /**
-        @dev    this modifier is used to decide
+        @dev    only fwdRequest's stakeholders can access function
+        @param  _fwdId  id of fwd
     */
     modifier onlyParty(uint256 _fwdId) {
         require(msg.sender == fwdRequests[_fwdId].fwdOwner ||
@@ -76,12 +89,30 @@ contract FwdCont is FwdBase {
     }
 
     /**
+        @dev    only when hedge is not effective user can access function
+        @param  _fwdId  id of fwd
+    */
+    modifier noHedge(uint256 _fwdId) {
+        require(fwdIndexToHedgeState[_fwdId] == hedgeStates[0]);
+        _;
+    }
+
+    /**
         @dev    set hedgeState
         @param  _fwdId  fwd id
         @param  _index  index of hedgeState
     */
     function _setHedgeState(uint256 _fwdId, uint256 _index) internal {
         fwdIndexToHedgeState[_fwdId] = hedgeStates[uint(_index)];
+    }
+
+    /**
+        @dev    set hedgeSign
+        @param  _fwdId  fwd id
+        @param  _index  index of hedgeSign
+    */
+    function _setHedgeSign(uint256 _fwdId, uint256 _index) internal {
+        fwdIndexToHedgeSign[_fwdId] = hedgeSign[uint(_index)];
     }
 
     /**
@@ -114,7 +145,7 @@ contract FwdCont is FwdBase {
         @param  _fwdId  fwd id
     */
     function _availSettlement(uint256 _fwdId) view internal {
-        require(now >= (fwdRequests[_fwdId].contractDay.add(fwdRequests[_fwdId].settlementDuration)).mul(1 days));
+        require(now >= (fwdRequests[_fwdId].contractDay.add(fwdRequests[_fwdId].settlementDuration.mul(1 days))));
     }
 
     /**
@@ -127,7 +158,7 @@ contract FwdCont is FwdBase {
     function _availHedge(uint256 _fwdId) view internal {
         require(
             fwdIndexToHedgeState[_fwdId] == hedgeStates[0] &&
-            fwdIndexToFwdState[_fwdId] == fwdStates[1] &&
+            fwdIndexToFwdState[_fwdId] != fwdStates[0] &&
             fwdDeposits[_fwdId] > 0);
     }
 
@@ -142,9 +173,19 @@ contract FwdCont is FwdBase {
     /**
         @dev    confirm whether the state is specific
         @param  _fwdId  fwd id
+        @param  _index  index of fwdState
     */
     function _checkState(uint256 _fwdId, uint256 _index) view internal {
         require(fwdIndexToFwdState[_fwdId] == fwdStates[uint(_index)]);
+    }
+
+    /**
+        @dev    confirm whether the hedgeState is specific
+        @param  _fwdId  fwd id
+        @param  _index  index of hedgeState
+    */
+    function _checkHedge(uint256 _fwdId, uint256 _index) view internal {
+        require(fwdIndexToHedgeState[_fwdId] == hedgeStates[uint(_index)]);
     }
 
     /**

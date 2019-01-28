@@ -115,7 +115,9 @@ contract FwdContProcess is Hedge, Request {
         // only receiver can execute
         _isReceiver(_fwdId);
         // fwdState = 'confirmWithdraw'
-        _checkState(_fwdId, 3);
+        _checkState(_fwdId, 2);
+        // hedgeState = 'confirmed'
+        _checkHedge(_fwdId, 2);
 
         if (fwdDeposits[_fwdId] > 0) {
             // withdraw operation
