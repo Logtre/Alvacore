@@ -84,16 +84,16 @@ contract Request is FwdCont, Fees {
 
     /**
         @dev add fwd request
-        @param _fwdId   fwdCnt use as fwdId.
+        @param _fwdCnt   fwdCnt use as fwdId.
         @param _fwdRequest   fwdRequest
     */
-    function _addFwd(uint256 _fwdId, FwdRequest _fwdRequest) private {
-        fwdRequests[_fwdId] = _fwdRequest;
-        _setFwdState(_fwdId, 0);
-        fwdDeposits[_fwdId] = 0;
-        cancelRequestSender[_fwdId] = false;
-        cancelRequestReceiver[_fwdId] = false;
-        fwdCnt++;
+    function _addFwd(uint256 _fwdCnt, FwdRequest _fwdRequest) private {
+        fwdRequests[_fwdCnt] = _fwdRequest;
+        _setFwdState(_fwdCnt, 0);
+        fwdDeposits[_fwdCnt] = 0;
+        cancelRequestSender[_fwdCnt] = false;
+        cancelRequestReceiver[_fwdCnt] = false;
+        fwdCnt++; // update fwdCnt after register fwdRequest
     }
 
     /**
@@ -140,7 +140,7 @@ contract Request is FwdCont, Fees {
             fwdRequests[_fwdCnt].senderAddr
         );
 
-        return _fwdCnt; // _fwdCnt is use as fwdId
+        return _fwdCnt; // _fwdCnt is use as registered fwdRequest's fwdId
     }
 
     /**
@@ -148,8 +148,14 @@ contract Request is FwdCont, Fees {
         @param  _fwdId  fwd id
     */
     function _depositFwd(uint256 _fwdId) internal {
-        // set deposit
-        fwdDeposits[_fwdId] = msg.value;
+        // if deposit amount is larger than 0, deposit will successful.
+        if (msg.value > 0) {
+            // set deposit
+            fwdDeposits[_fwdId] = msg.value;
+        } else {
+            revert();
+        }
+
         // update fwdState as 'setDeposit'
         _setFwdState(_fwdId, 1);
         // emit event
