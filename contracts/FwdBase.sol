@@ -116,6 +116,13 @@ contract FwdBase is AccessControl {
     }
 
     /**
+        @dev settlementDuration must positive number.
+    */
+    function _effectiveDuration(uint256 _duration) pure internal {
+        require(_duration >= 0);
+    }
+
+    /**
         @dev _setAllCancel set cancelFlag.
     */
     //function _setAllCancel(bool _flag) internal {

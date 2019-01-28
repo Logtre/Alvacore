@@ -114,6 +114,9 @@ contract Request is FwdCont, Fees {
         uint256 _fwdCnt
         ) internal returns(uint256) {
 
+        // check wether settlementDuration is effective or not.
+        _effectiveDuration(_settlementDuration);
+        
         FwdRequest memory fwdRequest = FwdRequest({
             fwdOwner: _fwdOwner, // the owner of fwd[0] is owner of contract
             contractDay: _contractDay, // the date when conclude the trade contract
