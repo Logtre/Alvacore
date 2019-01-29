@@ -117,7 +117,7 @@ contract FwdContProcess is Hedge, Request {
         // fwdState = 'confirmWithdraw'
         _checkState(_fwdId, 2);
         // hedgeState = 'confirmed'
-        _checkHedge(_fwdId, 2);
+        _checkHedge(_fwdId, 3);
 
         if (fwdDeposits[_fwdId] > 0) {
             // withdraw operation
